@@ -18,7 +18,7 @@ try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Archivo cargado exitosamente desde el ZIP.")
+    st.success("Carga exitosa.")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()
@@ -117,7 +117,7 @@ with col4:
     if "Id_Parcela(Unico)" in datos_filtrados.columns:
         parcelas_unicas = datos_filtrados["Id_Parcela(Unico)"].nunique()
         st.metric(
-            label="Parcelas Únicas",
+            label="Parcelas",
             value=f"{parcelas_unicas:,}"
         )
 
@@ -160,7 +160,7 @@ with col7:
             parcelas_por_anio,
             x="Anio",
             y="Id_Parcela(Unico)",
-            title="🏡 Número de Parcelas Únicas por Año",
+            title="🏡 Número de Parcelas por Año",
             labels={"Id_Parcela(Unico)": "Parcelas"},
             color_discrete_sequence=["#9467bd"]
         )
@@ -173,7 +173,7 @@ with col8:
             productores_por_anio,
             x="Anio",
             y="Id_Productor",
-            title="👩‍🌾👨‍🌾 Número de Productores Únicos por Año",
+            title="👩‍🌾👨‍🌾 Número de Productores por Año",
             labels={"Id_Productor": "Productores"},
             color_discrete_sequence=["#ff7f0e"]
         )

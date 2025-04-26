@@ -1,151 +1,201 @@
 import streamlit as st
 import pandas as pd
-import math
-from pathlib import Path
+import plotly.express as px
+import zipfile
 
-# Set the title and favicon that appear in the Browser's tab bar.
+# --- Configuración inicial de la página ---
 st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+    page_title="Dashboard Bitácoras Agronómicas",
+    page_icon="🌾",
+    layout="wide"
 )
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+# --- Leer el archivo ZIP ---
+archivo_zip = "Archivos.zip"
+nombre_csv = "Datos_Historicos_cuenta_al26032025.csv"
 
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+try:
+    with zipfile.ZipFile(archivo_zip, 'r') as z:
+        with z.open(nombre_csv) as f:
+            datos = pd.read_csv(f)
+    st.success("Archivo cargado exitosamente desde el ZIP.")
+except FileNotFoundError:
+    st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
+    st.stop()
+except KeyError:
+    st.error(f"Error: El archivo '{nombre_csv}' no está dentro del ZIP.")
+    st.stop()
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+# --- Preprocesamiento ---
+columnas_requeridas = [
+    "Anio", "Categoria_Proyecto", "Ciclo", "Estado",
+    "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)"
+]
+for columna in columnas_requeridas:
+    if columna not in datos.columns:
+        st.error(f"La columna '{columna}' no existe en el archivo CSV.")
+        st.stop()
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+datos[columnas_requeridas] = datos[columnas_requeridas].fillna("NA")
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
+datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
+    datos["Area_total_de_la_parcela(ha)"], errors="coerce"
+).fillna(0)
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
+datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
+
+# --- Sidebar de filtros ---
+st.sidebar.header("🎯 Filtros")
+
+categoria = st.sidebar.selectbox(
+    "Categoría del Proyecto",
+    options=["Todos"] + list(datos["Categoria_Proyecto"].unique())
+)
+
+ciclo = st.sidebar.selectbox(
+    "Ciclo",
+    options=["Todos"] + list(datos["Ciclo"].unique())
+)
+
+tipo_parcela = st.sidebar.selectbox(
+    "Tipo de Parcela",
+    options=["Todos"] + list(datos["Tipo_parcela"].unique())
+)
+
+estado = st.sidebar.selectbox(
+    "Estado",
+    options=["Todos"] + list(datos["Estado"].unique())
+)
+
+regimen = st.sidebar.selectbox(
+    "Régimen Hídrico",
+    options=["Todos"] + list(datos["Tipo_Regimen_Hidrico"].unique())
+)
+
+# --- Filtrado de datos según selecciones ---
+datos_filtrados = datos.copy()
+
+if categoria != "Todos":
+    datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"] == categoria]
+if ciclo != "Todos":
+    datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"] == ciclo]
+if tipo_parcela != "Todos":
+    datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"] == tipo_parcela]
+if estado != "Todos":
+    datos_filtrados = datos_filtrados[datos_filtrados["Estado"] == estado]
+if regimen != "Todos":
+    datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"] == regimen]
+
+# --- Título Principal ---
+st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
+
+# --- KPIs (tarjetas principales) ---
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        label="Bitácoras Registradas",
+        value=f"{datos_filtrados.shape[0]:,}"
     )
 
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+with col2:
+    st.metric(
+        label="Área Total (ha)",
+        value=f"{datos_filtrados['Area_total_de_la_parcela(ha)'].sum():,.2f} ha"
+    )
 
-    return gdp_df
-
-gdp_df = get_gdp_data()
-
-# -----------------------------------------------------------------------------
-# Draw the actual page
-
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
-
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
+with col3:
+    if "Id_Productor" in datos_filtrados.columns:
+        productores_unicos = datos_filtrados["Id_Productor"].nunique()
         st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
+            label="Productores Únicos",
+            value=f"{productores_unicos:,}"
         )
+
+with col4:
+    if "Id_Parcela(Unico)" in datos_filtrados.columns:
+        parcelas_unicas = datos_filtrados["Id_Parcela(Unico)"].nunique()
+        st.metric(
+            label="Parcelas Únicas",
+            value=f"{parcelas_unicas:,}"
+        )
+
+st.markdown("---")
+
+# --- Gráficas principales en dos filas ---
+# Fila 1
+col5, col6 = st.columns(2)
+
+with col5:
+    bitacoras_por_anio = datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
+    fig_bitacoras = px.bar(
+        bitacoras_por_anio,
+        x="Anio",
+        y="Bitácoras",
+        title="📋 Número de Bitácoras por Año",
+        color_discrete_sequence=["#1f77b4"]
+    )
+    st.plotly_chart(fig_bitacoras, use_container_width=True)
+
+with col6:
+    area_por_anio = datos_filtrados.groupby("Anio")["Area_total_de_la_parcela(ha)"].sum().reset_index()
+    fig_area = px.bar(
+        area_por_anio,
+        x="Anio",
+        y="Area_total_de_la_parcela(ha)",
+        title="🌿 Área Total de Parcelas por Año",
+        labels={"Area_total_de_la_parcela(ha)": "Área (ha)"},
+        color_discrete_sequence=["#2ca02c"]
+    )
+    st.plotly_chart(fig_area, use_container_width=True)
+
+# Fila 2
+col7, col8 = st.columns(2)
+
+with col7:
+    if "Id_Parcela(Unico)" in datos_filtrados.columns:
+        parcelas_por_anio = datos_filtrados.groupby("Anio")["Id_Parcela(Unico)"].nunique().reset_index()
+        fig_parcelas = px.bar(
+            parcelas_por_anio,
+            x="Anio",
+            y="Id_Parcela(Unico)",
+            title="🏡 Número de Parcelas Únicas por Año",
+            labels={"Id_Parcela(Unico)": "Parcelas"},
+            color_discrete_sequence=["#9467bd"]
+        )
+        st.plotly_chart(fig_parcelas, use_container_width=True)
+
+with col8:
+    if "Id_Productor" in datos_filtrados.columns:
+        productores_por_anio = datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
+        fig_productores = px.bar(
+            productores_por_anio,
+            x="Anio",
+            y="Id_Productor",
+            title="👩‍🌾👨‍🌾 Número de Productores Únicos por Año",
+            labels={"Id_Productor": "Productores"},
+            color_discrete_sequence=["#ff7f0e"]
+        )
+        st.plotly_chart(fig_productores, use_container_width=True)
+
+# Fila 3 (Distribución de género)
+if "Genero" in datos_filtrados.columns:
+    st.markdown("---")
+    st.subheader("Distribución de Género de Productores(as)")
+
+    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
+    datos_genero["Porcentaje"] = (datos_genero["Registros"] / datos_genero["Registros"].sum()) * 100
+
+    fig_genero = px.pie(
+        datos_genero,
+        names="Genero",
+        values="Porcentaje",
+        title="Distribución (%) por Género",
+        color_discrete_map={
+            "Masculino": "#2ca02c",
+            "Femenino": "#ff7f0e",
+            "NA..": "#D3D3D3"
+        }
+    )
+    st.plotly_chart(fig_genero, use_container_width=True)

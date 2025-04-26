@@ -18,7 +18,7 @@ try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Carga exitosa.")
+    st.success("Información basada en los datos registrados en las bitácoras agronómicas 2012_primer trimestre de 2025.")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()
@@ -109,7 +109,7 @@ with col3:
     if "Id_Productor" in datos_filtrados.columns:
         productores_unicos = datos_filtrados["Id_Productor"].nunique()
         st.metric(
-            label="Productores Únicos",
+            label="Productores",
             value=f"{productores_unicos:,}"
         )
 

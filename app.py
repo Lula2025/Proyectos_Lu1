@@ -169,7 +169,7 @@ with col7:
             parcelas_por_anio,
             x="Anio",
             y="Id_Parcela(Unico)",
-            title="🏡 Número de Parcelas por Año",
+            title="🌄 Número de Parcelas por Año",
             labels={"Id_Parcela(Unico)": "Parcelas"},
             color_discrete_sequence=["#9467bd"]
         )

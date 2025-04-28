@@ -205,4 +205,5 @@ if "Genero" in datos_filtrados.columns:
             "NA..": "#D3D3D3"
         }
     )
+     fig_genero.update_traces(textinfo='percent+label') # Opcional: mostrar porcentaje y etiqueta
     st.plotly_chart(fig_genero, use_container_width=True)

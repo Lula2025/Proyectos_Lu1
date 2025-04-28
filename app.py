@@ -204,7 +204,7 @@ if "Genero" in datos_filtrados.columns:
         color_discrete_map={
             "Masculino": "#2ca02c",
             "Femenino": "#ff7f0e",
-            "NA..": "#DCDCDC"
+            "NA..": "#D3D3D3"
         }
     )
     st.plotly_chart(fig_genero, use_container_width=True)

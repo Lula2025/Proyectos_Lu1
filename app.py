@@ -198,15 +198,24 @@ if "Genero" in datos_filtrados.columns:
     datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
 
     total_registros = datos_genero["Registros"].sum()
+if "Genero" in datos_filtrados.columns:
+    st.markdown("---")
+    
+    categorias_genero = ["Masculino", "Femenino", "NA.."]
+
+    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
+    datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
+
+    total_registros = datos_genero["Registros"].sum()
     if total_registros > 0:
         datos_genero["Porcentaje"] = (datos_genero["Registros"] / total_registros) * 100
     else:
         datos_genero["Porcentaje"] = 0
 
     color_map_genero = {
-        "Masculino": "#2ca02c",
-        "Femenino": "#ff7f0e",
-        "NA..": "#F0F0F0"
+        "Masculino": "#2ca02c",   # verde
+        "Femenino": "#ff7f0e",    # naranja
+        "NA..": "#F0F0F0"         # gris claro
     }
 
     fig_genero = px.pie(
@@ -214,7 +223,8 @@ if "Genero" in datos_filtrados.columns:
         names="Genero",
         values="Porcentaje",
         title="👩👨 Distribución (%) por Género",
-        color_discrete_map=color_map_genero
+        color="Genero",                      # <<<<<< 🔥 Agregado esto
+        color_discrete_map=color_map_genero   # <<<<<< 🔥 Usa el mapa
     )
 
     fig_genero.update_traces(

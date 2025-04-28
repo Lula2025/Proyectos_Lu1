@@ -30,10 +30,10 @@ except KeyError:
 col1, col2, col3 = st.columns([1, 4, 1])
 
 with col1:
-    st.image("assets/cimmyt.png", use_column_width=True)
+    st.image("assets/cimmyt.png", use_container_width=True)
 
 with col3:
-    st.image("assets/ea.png", use_column_width=True)
+    st.image("assets/ea.png", use_container_width=True)
     
 # --- Preprocesamiento ---
 columnas_requeridas = [

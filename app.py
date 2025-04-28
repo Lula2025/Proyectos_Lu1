@@ -27,7 +27,7 @@ except KeyError:
     st.stop()
 
 # --- Mostrar encabezado con imágenes ---
-col1, col3 = st.columns([1, 1])
+col1, col2, col3 = st.columns([1, 4, 1])
 
 with col1:
     st.image("assets/cimmyt.png", use_column_width=True)

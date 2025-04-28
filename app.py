@@ -191,14 +191,28 @@ with col8:
 # Fila 3 (Distribución de género)
 if "Genero" in datos_filtrados.columns:
     st.markdown("---")
-    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
-    datos_genero["Porcentaje"] = (datos_genero["Registros"] / datos_genero["Registros"].sum()) * 100
+    
+    # Definir categorías fijas
+    categorias_genero = ["Masculino", "Femenino", "NA.."]
 
-    # Definimos colores fijos
+    # Contar registros
+    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
+
+    # Asegurarnos de que todas las categorías existan
+    datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
+
+    # Calcular porcentaje
+    total_registros = datos_genero["Registros"].sum()
+    if total_registros > 0:
+        datos_genero["Porcentaje"] = (datos_genero["Registros"] / total_registros) * 100
+    else:
+        datos_genero["Porcentaje"] = 0
+
+    # Definir colores fijos
     color_map_genero = {
-        "Masculino": "#2ca02c",  # Verde
-        "Femenino": "#ff7f0e",   # Naranja
-        "NA..": "#D3D3D3"        # Gris claro
+        "Masculino": "#2ca02c",
+        "Femenino": "#ff7f0e",
+        "NA..": "#D3D3D3"
     }
 
     fig_genero = px.pie(
@@ -209,10 +223,11 @@ if "Genero" in datos_filtrados.columns:
         color_discrete_map=color_map_genero
     )
 
-    # Mejorar presentación
     fig_genero.update_traces(
-        textinfo='percent+label',  # Mostrar porcentaje y etiqueta
-        marker=dict(line=dict(color='#FFFFFF', width=2))  # Líneas blancas entre secciones
+        textinfo='percent+label',
+        marker=dict(line=dict(color='#FFFFFF', width=2))
     )
+
+    st.plotly_chart(fig_genero, use_container_width=True)
 
     st.plotly_chart(fig_genero, use_container_width=True)

@@ -32,10 +32,6 @@ col1, col2, col3 = st.columns([1, 4, 1])
 with col1:
     st.image("assets/cimmyt.png", use_column_width=True)
 
-with col2:
-    st.markdown("<h1 style='text-align: center;'>Datos Históricos 2012 - marzo 2025<br>Bitácoras Agronómicas</h1>", unsafe_allow_html=True)
-    st.image("assets/nueva_imagen.png", width=150)  # <-- Imagen nueva debajo del título si quieres
-
 with col3:
     st.image("assets/ea.png", use_column_width=True)
     

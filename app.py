@@ -191,8 +191,6 @@ with col8:
 # Fila 3 (Distribución de género)
 if "Genero" in datos_filtrados.columns:
     st.markdown("---")
-    st.subheader("Distribución de Género de Productores(as)")
-
     datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
     datos_genero["Porcentaje"] = (datos_genero["Registros"] / datos_genero["Registros"].sum()) * 100
 

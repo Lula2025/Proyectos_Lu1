@@ -194,15 +194,25 @@ if "Genero" in datos_filtrados.columns:
     datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
     datos_genero["Porcentaje"] = (datos_genero["Registros"] / datos_genero["Registros"].sum()) * 100
 
+    # Definimos colores fijos
+    color_map_genero = {
+        "Masculino": "#2ca02c",  # Verde
+        "Femenino": "#ff7f0e",   # Naranja
+        "NA..": "#D3D3D3"        # Gris claro
+    }
+
     fig_genero = px.pie(
         datos_genero,
         names="Genero",
         values="Porcentaje",
         title="👩👨 Distribución (%) por Género",
-        color_discrete_map={
-            "Masculino": "#2ca02c",
-            "Femenino": "#ff7f0e",
-            "NA..": "#D3D3D3"
-        }
+        color_discrete_map=color_map_genero
     )
+
+    # Mejorar presentación
+    fig_genero.update_traces(
+        textinfo='percent+label',  # Mostrar porcentaje y etiqueta
+        marker=dict(line=dict(color='#FFFFFF', width=2))  # Líneas blancas entre secciones
+    )
+
     st.plotly_chart(fig_genero, use_container_width=True)

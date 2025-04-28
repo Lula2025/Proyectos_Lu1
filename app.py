@@ -206,7 +206,7 @@ if "Genero" in datos_filtrados.columns:
     color_map_genero = {
         "Masculino": "#2ca02c",
         "Femenino": "#ff7f0e",
-        "NA..": "#D3D3D3"
+        "NA..": "#F0F0F0"
     }
 
     fig_genero = px.pie(

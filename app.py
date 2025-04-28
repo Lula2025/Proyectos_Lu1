@@ -200,11 +200,11 @@ if "Genero" in datos_filtrados.columns:
         datos_genero,
         names="Genero",
         values="Porcentaje",
-        title="Distribución (%) por Género",
+        title="👩👨 Distribución (%) por Género",
         color_discrete_map={
             "Masculino": "#2ca02c",
             "Femenino": "#ff7f0e",
-            "NA..": "#D3D3D3"
+            "NA..": "#DCDCDC"
         }
     )
     st.plotly_chart(fig_genero, use_container_width=True)

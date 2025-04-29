@@ -222,7 +222,7 @@ if "Genero" in datos_filtrados.columns:
         datos_genero,
         names="Genero",
         values="Porcentaje",
-        title="👩👨 Distribución (%) por Género",
+        title="👩👨 Distribución de productores(as) (%) por Género",
         color="Genero",                      # <<<<<< 🔥 Agregado esto
         color_discrete_map=color_map_genero   # <<<<<< 🔥 Usa el mapa
     )

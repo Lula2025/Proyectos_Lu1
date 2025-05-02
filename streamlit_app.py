@@ -164,4 +164,4 @@ if "Genero" in datos_filtrados.columns:
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 
-    st.plotly_chart(fig_genero, use_container_width=True, key="grafico_genero")
+    st.plotly_chart(fig_genero, use_container_width=True)

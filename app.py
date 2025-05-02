@@ -44,8 +44,10 @@ for columna in columnas_requeridas:
     if columna not in datos.columns:
         st.error(f"La columna '{columna}' no existe en el archivo CSV.")
         st.stop()
-
-datos[columnas_requeridas] = datos[columnas_requeridas].fillna("NA")
+    if datos[columna].dtype == "object":
+        datos[columna] = datos[columna].fillna("NA")
+    else:
+        datos[columna] = datos[columna].fillna(0)
 
 datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
 datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
@@ -57,48 +59,53 @@ datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 # --- Sidebar de filtros ---
 st.sidebar.header("🌟 Filtros")
 
-if st.sidebar.button("❌ Limpiar todos los filtros"):
-    st.experimental_rerun()
+limpiar = st.sidebar.button("❌ Limpiar todos los filtros")
+
+select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
 
 datos_filtrados = datos.copy()
 
 # Filtro por Categoría
 with st.sidebar.expander("Categoría del Proyecto"):
-    categorias = datos["Categoria_Proyecto"].unique()
-    seleccion_categorias = [c for c in categorias if st.checkbox(c, key=f"cat_{c}")]
+    categorias = sorted(datos["Categoria_Proyecto"].unique())
+    seleccion_categorias = [c for c in categorias if st.checkbox(c, value=select_all, key=f"cat_{c}")]
     if seleccion_categorias:
         datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
 
 # Filtro por Ciclo
 with st.sidebar.expander("Ciclo"):
-    ciclos = datos["Ciclo"].unique()
-    seleccion_ciclos = [c for c in ciclos if st.checkbox(c, key=f"ciclo_{c}")]
+    ciclos = sorted(datos["Ciclo"].unique())
+    seleccion_ciclos = [c for c in ciclos if st.checkbox(c, value=select_all, key=f"ciclo_{c}")]
     if seleccion_ciclos:
         datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela
 with st.sidebar.expander("Tipo de Parcela"):
-    tipos_parcela = datos["Tipo_parcela"].unique()
-    seleccion_tipos_parcela = [t for t in tipos_parcela if st.checkbox(t, key=f"parcela_{t}")]
+    tipos_parcela = sorted(datos["Tipo_parcela"].unique())
+    seleccion_tipos_parcela = [t for t in tipos_parcela if st.checkbox(t, value=select_all, key=f"parcela_{t}")]
     if seleccion_tipos_parcela:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
-    estados = datos["Estado"].unique()
-    seleccion_estados = [e for e in estados if st.checkbox(e, key=f"estado_{e}")]
+    estados = sorted(datos["Estado"].unique())
+    seleccion_estados = [e for e in estados if st.checkbox(e, value=select_all, key=f"estado_{e}")]
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
 with st.sidebar.expander("Régimen Hídrico"):
-    regimenes = datos["Tipo_Regimen_Hidrico"].unique()
-    seleccion_regimen = [r for r in regimenes if st.checkbox(r, key=f"regimen_{r}")]
+    regimenes = sorted(datos["Tipo_Regimen_Hidrico"].unique())
+    seleccion_regimen = [r for r in regimenes if st.checkbox(r, value=select_all, key=f"regimen_{r}")]
     if seleccion_regimen:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
 
 # --- Título Principal ---
 st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
+
+if datos_filtrados.empty:
+    st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
+    st.stop()
 
 # --- KPIs ---
 col1, col2, col3, col4 = st.columns(4)
@@ -209,15 +216,15 @@ if "Genero" in datos_filtrados.columns:
     fig_genero = px.pie(
         datos_genero,
         names="Genero",
-        values="Porcentaje",
-        title="👩👨 Distribución de productores(as) (%) por Género",
+        values="Registros",
+        title="👩👨 Distribución de productores(as) por Género",
         color="Genero",
         color_discrete_map=color_map_genero
     )
 
     fig_genero.update_traces(
-        textinfo='percent+label',
+        textinfo='value',
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 
-    st.plotly_chart(fig_genero, use_container_width=True, key="genero")
+    st.plotly_chart(fig_genero, use_container_width=True)

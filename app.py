@@ -72,14 +72,20 @@ if 'limpiar_filtros' not in st.session_state:
 
 datos_filtrados = datos.copy()
 
-# Función auxiliar para manejar checkboxes con opción de limpiar
-def checkbox_list(label, opciones, prefix):
+# Función auxiliar para manejar checkboxes con opción de limpiar y validación de disponibilidad
+def checkbox_list(label, opciones, prefix, disponibles_actuales):
     seleccionadas = []
     seleccionar_todos = st.checkbox(f"Seleccionar todos en {label}", key=f"select_all_{prefix}")
     for o in opciones:
-        default_value = seleccionar_todos if not st.session_state.limpiar_filtros else False
         key_name = f"{prefix}_{str(o)}"
-        checked = st.checkbox(str(o), value=default_value, key=key_name)
+        esta_disponible = o in disponibles_actuales
+        valor_default = seleccionar_todos if not st.session_state.limpiar_filtros else False
+        checked = st.checkbox(
+            str(o),
+            value=valor_default if esta_disponible else False,
+            key=key_name,
+            disabled=not esta_disponible
+        )
         if checked:
             seleccionadas.append(o)
     return seleccionadas
@@ -94,7 +100,6 @@ with st.sidebar.expander("Categoría del Proyecto"):
 
         proyectos_seleccionados = []
 
-        # Si solo hay un proyecto, lo seleccionamos automáticamente
         if len(proyectos) == 1:
             proyectos_seleccionados = proyectos
         else:
@@ -112,35 +117,46 @@ with st.sidebar.expander("Categoría del Proyecto"):
 
 # Filtro por Ciclo (opciones dinámicas)
 with st.sidebar.expander("Ciclo"):
-    ciclos_disponibles = sorted(datos_filtrados["Ciclo"].unique())
-    seleccion_ciclos = checkbox_list("Ciclo", ciclos_disponibles, "ciclo")
+    ciclos_disponibles = sorted(datos["Ciclo"].unique())
+    ciclos_validos = sorted(datos_filtrados["Ciclo"].unique())
+    seleccion_ciclos = checkbox_list("Ciclo", ciclos_disponibles, "ciclo", ciclos_validos)
     if seleccion_ciclos:
         datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela (opciones dinámicas)
 with st.sidebar.expander("Tipo de Parcela"):
-    tipos_parcela_disponibles = sorted(datos_filtrados["Tipo_parcela"].unique())
-    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela_disponibles, "parcela")
+    tipos_parcela_disponibles = sorted(datos["Tipo_parcela"].unique())
+    tipos_validos = sorted(datos_filtrados["Tipo_parcela"].unique())
+    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela_disponibles, "parcela", tipos_validos)
     if seleccion_tipos_parcela:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado (opciones dinámicas)
 with st.sidebar.expander("Estado"):
-    estados_disponibles = sorted(datos_filtrados["Estado"].unique())
+    estados_disponibles = sorted(datos["Estado"].unique())
+    estados_validos = sorted(datos_filtrados["Estado"].unique())
     seleccionar_todos_estados = st.checkbox("Seleccionar todos los estados", key="select_all_estados")
     seleccion_estados = []
     for estado in estados_disponibles:
         key_estado = f"estado_{estado}"
+        esta_disponible = estado in estados_validos
         valor_default = seleccionar_todos_estados if not st.session_state.limpiar_filtros else False
-        if st.checkbox(estado, value=valor_default, key=key_estado):
+        checked = st.checkbox(
+            estado,
+            value=valor_default if esta_disponible else False,
+            key=key_estado,
+            disabled=not esta_disponible
+        )
+        if checked:
             seleccion_estados.append(estado)
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico (opciones dinámicas)
 with st.sidebar.expander("Régimen Hídrico"):
-    regimenes_disponibles = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
-    seleccion_regimen = checkbox_list("Régimen", regimenes_disponibles, "regimen")
+    regimenes_disponibles = sorted(datos["Tipo_Regimen_Hidrico"].unique())
+    regimenes_validos = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
+    seleccion_regimen = checkbox_list("Régimen", regimenes_disponibles, "regimen", regimenes_validos)
     if seleccion_regimen:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
 
@@ -154,6 +170,7 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
+
 
 
 

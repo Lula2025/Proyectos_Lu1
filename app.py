@@ -59,7 +59,7 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
 # --- Sidebar de filtros ---
-st.sidebar.header(" 🔽 Filtros")
+st.sidebar.header(" 🌀 Filtros")
 
 if 'limpiar_filtros' not in st.session_state:
     st.session_state.limpiar_filtros = False

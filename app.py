@@ -60,24 +60,12 @@ datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
 
 # --- Sidebar de filtros ---
-st.sidebar.markdown("""
-### <span style='vertical-align:middle;'>Filtros</span>
-<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" style="vertical-align:middle;" fill="none" viewBox="0 0 24 24">
-  <path fill="#2196F3" d="M3 4h18v2l-7 7v7l-4 2v-9L3 6V4z"/>
-  <path stroke="#0D47A1" stroke-width="1.5" d="M3 4h18v2l-7 7v7l-4 2v-9L3 6V4z"/>
-</svg>
-""", unsafe_allow_html=True)
+st.sidebar.header(" 🔽 Filtros")
 
 if 'limpiar_filtros' not in st.session_state:
     st.session_state.limpiar_filtros = False
 
 select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
-
-datos_filtrados = datos.copy()
-
-# Botón seleccionar/deseleccionar todos
-st.sidebar.markdown("### Selección general")
-seleccionar_todo_global = st.sidebar.checkbox("Seleccionar/Deseleccionar todos")
 
 datos_filtrados = datos.copy()
 

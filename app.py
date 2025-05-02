@@ -28,13 +28,11 @@ except KeyError:
 
 # --- Mostrar encabezado con imágenes ---
 col1, col2, col3 = st.columns([1, 4, 1])
-
 with col1:
     st.image("assets/cimmyt.png", use_container_width=True)
-
 with col3:
     st.image("assets/ea.png", use_container_width=True)
-    
+
 # --- Preprocesamiento ---
 columnas_requeridas = [
     "Anio", "Categoria_Proyecto", "Ciclo", "Estado",
@@ -57,78 +55,52 @@ datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 # --- Sidebar de filtros ---
 st.sidebar.header("🎯 Filtros")
 
-categoria = st.sidebar.selectbox(
-    "Categoría del Proyecto",
-    options=["Todos"] + list(datos["Categoria_Proyecto"].unique())
-)
+# Filtros múltiples con comportamiento de "seleccionar todos"
+def filtro_multiselect(nombre_columna, etiqueta):
+    opciones = sorted(datos[nombre_columna].unique())
+    seleccion = st.sidebar.multiselect(
+        etiqueta,
+        options=opciones,
+        default=opciones
+    )
+    if not seleccion:
+        seleccion = opciones
+    return seleccion
 
-ciclo = st.sidebar.selectbox(
-    "Ciclo",
-    options=["Todos"] + list(datos["Ciclo"].unique())
-)
-
-tipo_parcela = st.sidebar.selectbox(
-    "Tipo de Parcela",
-    options=["Todos"] + list(datos["Tipo_parcela"].unique())
-)
-
-estado = st.sidebar.selectbox(
-    "Estado",
-    options=["Todos"] + list(datos["Estado"].unique())
-)
-
-regimen = st.sidebar.selectbox(
-    "Régimen Hídrico",
-    options=["Todos"] + list(datos["Tipo_Regimen_Hidrico"].unique())
-)
+categoria = filtro_multiselect("Categoria_Proyecto", "Categoría del Proyecto")
+ciclo = filtro_multiselect("Ciclo", "Ciclo")
+tipo_parcela = filtro_multiselect("Tipo_parcela", "Tipo de Parcela")
+estado = filtro_multiselect("Estado", "Estado")
+regimen = filtro_multiselect("Tipo_Regimen_Hidrico", "Régimen Hídrico")
 
 # --- Filtrado de datos según selecciones ---
-datos_filtrados = datos.copy()
-
-if categoria != "Todos":
-    datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"] == categoria]
-if ciclo != "Todos":
-    datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"] == ciclo]
-if tipo_parcela != "Todos":
-    datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"] == tipo_parcela]
-if estado != "Todos":
-    datos_filtrados = datos_filtrados[datos_filtrados["Estado"] == estado]
-if regimen != "Todos":
-    datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"] == regimen]
+datos_filtrados = datos[
+    datos["Categoria_Proyecto"].isin(categoria) &
+    datos["Ciclo"].isin(ciclo) &
+    datos["Tipo_parcela"].isin(tipo_parcela) &
+    datos["Estado"].isin(estado) &
+    datos["Tipo_Regimen_Hidrico"].isin(regimen)
+]
 
 # --- Título Principal ---
 st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 
-# --- KPIs (tarjetas principales) ---
+# --- KPIs ---
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric(
-        label="Bitácoras Registradas",
-        value=f"{datos_filtrados.shape[0]:,}"
-    )
+    st.metric("Bitácoras Registradas", f"{datos_filtrados.shape[0]:,}")
 
 with col2:
-    st.metric(
-        label="Área Total (ha)",
-        value=f"{datos_filtrados['Area_total_de_la_parcela(ha)'].sum():,.2f} ha"
-    )
+    st.metric("Área Total (ha)", f"{datos_filtrados['Area_total_de_la_parcela(ha)'].sum():,.2f} ha")
 
 with col3:
     if "Id_Productor" in datos_filtrados.columns:
-        productores_unicos = datos_filtrados["Id_Productor"].nunique()
-        st.metric(
-            label="Productores",
-            value=f"{productores_unicos:,}"
-        )
+        st.metric("Productores", f"{datos_filtrados['Id_Productor'].nunique():,}")
 
 with col4:
     if "Id_Parcela(Unico)" in datos_filtrados.columns:
-        parcelas_unicas = datos_filtrados["Id_Parcela(Unico)"].nunique()
-        st.metric(
-            label="Parcelas",
-            value=f"{parcelas_unicas:,}"
-        )
+        st.metric("Parcelas", f"{datos_filtrados['Id_Parcela(Unico)'].nunique():,}")
 
 st.markdown("---")
 
@@ -196,26 +168,17 @@ if "Genero" in datos_filtrados.columns:
 
     datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
     datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
-
     total_registros = datos_genero["Registros"].sum()
-if "Genero" in datos_filtrados.columns:
-    st.markdown("---")
-    
-    categorias_genero = ["Masculino", "Femenino", "NA.."]
 
-    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
-    datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
-
-    total_registros = datos_genero["Registros"].sum()
     if total_registros > 0:
         datos_genero["Porcentaje"] = (datos_genero["Registros"] / total_registros) * 100
     else:
         datos_genero["Porcentaje"] = 0
 
     color_map_genero = {
-        "Masculino": "#2ca02c",   # verde
-        "Femenino": "#ff7f0e",    # naranja
-        "NA..": "#F0F0F0"         # gris claro
+        "Masculino": "#2ca02c",
+        "Femenino": "#ff7f0e",
+        "NA..": "#F0F0F0"
     }
 
     fig_genero = px.pie(
@@ -223,8 +186,8 @@ if "Genero" in datos_filtrados.columns:
         names="Genero",
         values="Porcentaje",
         title="👩👨 Distribución de productores(as) (%) por Género",
-        color="Genero",                      # <<<<<< 🔥 Agregado esto
-        color_discrete_map=color_map_genero   # <<<<<< 🔥 Usa el mapa
+        color="Genero",
+        color_discrete_map=color_map_genero
     )
 
     fig_genero.update_traces(
@@ -232,6 +195,5 @@ if "Genero" in datos_filtrados.columns:
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 
-    st.plotly_chart(fig_genero, use_container_width=True, key="genero")
-
+    st.plotly_chart(fig_genero, use_container_width=True)
 

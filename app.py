@@ -58,7 +58,7 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
-# --- Sidebar de filtros ---
+# --- Sidebar de filtros encadenados ---
 st.sidebar.header(" 🔽 Filtros")
 
 if 'limpiar_filtros' not in st.session_state:
@@ -66,9 +66,7 @@ if 'limpiar_filtros' not in st.session_state:
 
 select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
 
-datos_filtrados = datos.copy()
-
-# Función auxiliar para manejar checkboxes con opción de limpiar
+# Función auxiliar para manejar checkboxes múltiples
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
     for o in opciones:
@@ -78,13 +76,17 @@ def checkbox_list(label, opciones, prefix):
             seleccionadas.append(o)
     return seleccionadas
 
-# Filtro por Categoría del Proyecto y Proyecto (subcategoría)
+# Inicializar con todos los datos
+datos_filtrados = datos.copy()
+
+# Filtro por Categoría del Proyecto y Proyecto
 with st.sidebar.expander("Categoría del Proyecto"):
-    categorias = sorted(datos["Categoria_Proyecto"].unique())
+    categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
     categoria_seleccionada = st.selectbox("Selecciona una categoría", ["Todas"] + categorias)
 
     if categoria_seleccionada != "Todas":
-        proyectos = sorted(datos[datos["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
+        datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada]
+        proyectos = sorted(datos_filtrados["Proyecto"].unique())
         seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
 
         proyectos_seleccionados = []
@@ -94,35 +96,33 @@ with st.sidebar.expander("Categoría del Proyecto"):
             if st.checkbox(str(proyecto), value=valor_default, key=key_name):
                 proyectos_seleccionados.append(proyecto)
 
-        datos_filtrados = datos_filtrados[
-            (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
-            (datos_filtrados["Proyecto"].isin(proyectos_seleccionados))
-        ]
+        if proyectos_seleccionados:
+            datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(proyectos_seleccionados)]
 
 # Filtro por Ciclo
 with st.sidebar.expander("Ciclo"):
-    ciclos = sorted(datos["Ciclo"].unique())
+    ciclos = sorted(datos_filtrados["Ciclo"].unique())
     seleccion_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
     if seleccion_ciclos:
         datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela
 with st.sidebar.expander("Tipo de Parcela"):
-    tipos_parcela = sorted(datos["Tipo_parcela"].unique())
+    tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
     seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "parcela")
     if seleccion_tipos_parcela:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
-    estados = sorted(datos["Estado"].unique())
+    estados = sorted(datos_filtrados["Estado"].unique())
     seleccion_estados = checkbox_list("Estado", estados, "estado")
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
 with st.sidebar.expander("Régimen Hídrico"):
-    regimenes = sorted(datos["Tipo_Regimen_Hidrico"].unique())
+    regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
     seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
     if seleccion_regimen:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
@@ -130,6 +130,7 @@ with st.sidebar.expander("Régimen Hídrico"):
 # Resetear estado después de aplicar filtros
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
+
 
 # --- Título Principal ---
 st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
@@ -259,5 +260,8 @@ if "Genero" in datos_filtrados.columns:
         textinfo='value',
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
+
+    st.plotly_chart(fig_genero, use_container_width=True)
+
 
     st.plotly_chart(fig_genero, use_container_width=True)

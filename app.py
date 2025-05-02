@@ -121,7 +121,13 @@ with st.sidebar.expander("Tipo de Parcela"):
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
     estados = sorted(datos["Estado"].unique())
-    seleccion_estados = checkbox_list("Estado", estados, "estado")
+    seleccionar_todos_estados = st.checkbox("Seleccionar todos los estados", key="select_all_estado")
+    seleccion_estados = []
+    for estado in estados:
+        valor_default = seleccionar_todos_estados if not st.session_state.limpiar_filtros else False
+        key_estado = f"estado_{estado}"
+        if st.checkbox(estado, value=valor_default, key=key_estado):
+            seleccion_estados.append(estado)
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 

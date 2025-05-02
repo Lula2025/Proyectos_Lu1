@@ -33,7 +33,7 @@ with col1:
     st.image("assets/cimmyt.png", use_container_width=True)
 
 with col3:
-    st.image("assets/ea.png", use_container_width=True)
+    st.image("assets/filtro_verde.png", use_container_width=True)
 
 # --- Preprocesamiento ---
 columnas_requeridas = [
@@ -57,8 +57,6 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 ).fillna(0)
 
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
-
-
 
 # --- Sidebar de filtros ---
 st.sidebar.markdown("""
@@ -111,19 +109,24 @@ with st.sidebar.expander("Categoría del Proyecto"):
 
         if len(proyectos) == 1:
             proyectos_seleccionados = proyectos
+            st.markdown(f"**Proyecto único seleccionado automáticamente:** {proyectos[0]}")
+            datos_filtrados = datos_filtrados[
+                (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
+                (datos_filtrados["Proyecto"] == proyectos[0])
+            ]
         elif proyectos:
             seleccionar_todos_proyectos = seleccionar_todo_global or st.checkbox("Seleccionar todos los proyectos", key="select_all_proyectos")
             for proyecto in proyectos:
                 key_name = f"proyecto_checkbox_{str(proyecto)}"
                 if st.checkbox(str(proyecto), value=seleccionar_todos_proyectos, key=key_name):
                     proyectos_seleccionados.append(proyecto)
+
+            datos_filtrados = datos_filtrados[
+                (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
+                (datos_filtrados["Proyecto"].isin(proyectos_seleccionados))
+            ]
         else:
             st.markdown("*Sin proyectos disponibles*")
-
-        datos_filtrados = datos_filtrados[
-            (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
-            (datos_filtrados["Proyecto"].isin(proyectos_seleccionados))
-        ]
 
 # Filtro por Ciclo
 if not datos_filtrados.empty:

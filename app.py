@@ -38,7 +38,7 @@ with col3:
 # --- Preprocesamiento ---
 columnas_requeridas = [
     "Anio", "Categoria_Proyecto", "Ciclo", "Estado",
-    "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)"
+    "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)", "Proyecto"
 ]
 for columna in columnas_requeridas:
     if columna not in datos.columns:
@@ -47,7 +47,7 @@ for columna in columnas_requeridas:
     datos[columna] = datos[columna].fillna("NA" if datos[columna].dtype == "object" else 0)
 
 # Convertir columnas categóricas a string
-columnas_categoricas = ["Categoria_Proyecto", "Ciclo", "Estado", "Tipo_Regimen_Hidrico", "Tipo_parcela"]
+columnas_categoricas = ["Categoria_Proyecto", "Ciclo", "Estado", "Tipo_Regimen_Hidrico", "Tipo_parcela", "Proyecto"]
 for col in columnas_categoricas:
     datos[col] = datos[col].astype(str)
 
@@ -78,12 +78,20 @@ def checkbox_list(label, opciones, prefix):
             seleccionadas.append(o)
     return seleccionadas
 
-# Filtro por Categoría
+# Filtro por Categoría del Proyecto y Proyecto (subcategoría)
 with st.sidebar.expander("Categoría del Proyecto"):
     categorias = sorted(datos["Categoria_Proyecto"].unique())
-    seleccion_categorias = checkbox_list("Categoría", categorias, "cat")
-    if seleccion_categorias:
-        datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
+    categoria_seleccionada = st.selectbox("Selecciona una categoría", ["Todas"] + categorias)
+
+    if categoria_seleccionada != "Todas":
+        proyectos = sorted(datos[datos["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
+        seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
+        proyectos_seleccionados = st.multiselect("Selecciona proyecto(s)", proyectos, default=proyectos if seleccionar_todos_proyectos else [])
+
+        datos_filtrados = datos_filtrados[
+            (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
+            (datos_filtrados["Proyecto"].isin(proyectos_seleccionados))
+        ]
 
 # Filtro por Ciclo
 with st.sidebar.expander("Ciclo"):

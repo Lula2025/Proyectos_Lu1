@@ -131,103 +131,9 @@ with st.sidebar.expander("Régimen Hídrico"):
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
 
+# --- Gráfico de distribución por género ---
+import plotly.express as px
 
-# --- Título Principal ---
-st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
-
-if datos_filtrados.empty:
-    st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
-    st.stop()
-
-# --- KPIs ---
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.metric(
-        label="Bitácoras Registradas",
-        value=f"{datos_filtrados.shape[0]:,}"
-    )
-
-with col2:
-    st.metric(
-        label="Área Total (ha)",
-        value=f"{datos_filtrados['Area_total_de_la_parcela(ha)'].sum():,.2f} ha"
-    )
-
-with col3:
-    if "Id_Productor" in datos_filtrados.columns:
-        productores_unicos = datos_filtrados["Id_Productor"].nunique()
-        st.metric(
-            label="Productores",
-            value=f"{productores_unicos:,}"
-        )
-
-with col4:
-    if "Id_Parcela(Unico)" in datos_filtrados.columns:
-        parcelas_unicas = datos_filtrados["Id_Parcela(Unico)"].nunique()
-        st.metric(
-            label="Parcelas",
-            value=f"{parcelas_unicas:,}"
-        )
-
-st.markdown("---")
-
-# --- Gráficas principales ---
-col5, col6 = st.columns(2)
-
-with col5:
-    color_arg = "Tipo_parcela" if seleccion_tipos_parcela else None
-    bitacoras_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"]).size().reset_index(name="Bitácoras") if color_arg else datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
-    fig_bitacoras = px.bar(
-        bitacoras_por_anio,
-        x="Anio",
-        y="Bitácoras",
-        color=color_arg,
-        title="📋 Número de Bitácoras por Año"
-    )
-    st.plotly_chart(fig_bitacoras, use_container_width=True)
-
-with col6:
-    area_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Area_total_de_la_parcela(ha)"].sum().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Area_total_de_la_parcela(ha)"].sum().reset_index()
-    fig_area = px.bar(
-        area_por_anio,
-        x="Anio",
-        y="Area_total_de_la_parcela(ha)",
-        color="Tipo_parcela" if seleccion_tipos_parcela else None,
-        title="🌿 Área Total de Parcelas por Año",
-        labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
-    )
-    st.plotly_chart(fig_area, use_container_width=True)
-
-col7, col8 = st.columns(2)
-
-with col7:
-    if "Id_Parcela(Unico)" in datos_filtrados.columns:
-        parcelas_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Parcela(Unico)"].nunique().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Parcela(Unico)"].nunique().reset_index()
-        fig_parcelas = px.bar(
-            parcelas_por_anio,
-            x="Anio",
-            y="Id_Parcela(Unico)",
-            color="Tipo_parcela" if seleccion_tipos_parcela else None,
-            title="🌄 Número de Parcelas por Año",
-            labels={"Id_Parcela(Unico)": "Parcelas"}
-        )
-        st.plotly_chart(fig_parcelas, use_container_width=True)
-
-with col8:
-    if "Id_Productor" in datos_filtrados.columns:
-        productores_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Productor"].nunique().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
-        fig_productores = px.bar(
-            productores_por_anio,
-            x="Anio",
-            y="Id_Productor",
-            color="Tipo_parcela" if seleccion_tipos_parcela else None,
-            title="👩‍🌾👨‍🌾 Número de Productores por Año",
-            labels={"Id_Productor": "Productores"}
-        )
-        st.plotly_chart(fig_productores, use_container_width=True)
-
-# Distribución por género
 if "Genero" in datos_filtrados.columns:
     st.markdown("---")
     datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
@@ -236,10 +142,7 @@ if "Genero" in datos_filtrados.columns:
     datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
 
     total_registros = datos_genero["Registros"].sum()
-    if total_registros > 0:
-        datos_genero["Porcentaje"] = (datos_genero["Registros"] / total_registros) * 100
-    else:
-        datos_genero["Porcentaje"] = 0
+    datos_genero["Porcentaje"] = (datos_genero["Registros"] / total_registros * 100) if total_registros > 0 else 0
 
     color_map_genero = {
         "Masculino": "#2ca02c",
@@ -261,7 +164,4 @@ if "Genero" in datos_filtrados.columns:
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 
-    st.plotly_chart(fig_genero, use_container_width=True)
-
-    st.plotly_chart(fig_genero, use_container_width=True)
-
+    st.plotly_chart(fig_genero, use_container_width=True, key="grafico_genero")

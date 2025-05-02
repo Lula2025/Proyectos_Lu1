@@ -59,20 +59,25 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
 # --- Sidebar de filtros ---
-st.sidebar.header(" 🌀 Filtros")
+st.sidebar.markdown("""
+###  Filtros  ⚗️
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 4H21V6L14 13V19L10 21V13L3 6V4Z" fill="#4CAF50"/>
+  <path d="M14 13L21 6V4H3V6L10 13V21L14 19V13Z" stroke="#2E7D32" stroke-width="1.5"/>
+</svg>
+""", unsafe_allow_html=True)  
 
 if 'limpiar_filtros' not in st.session_state:
     st.session_state.limpiar_filtros = False
-
-select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
 
 datos_filtrados = datos.copy()
 
 # Función auxiliar para manejar checkboxes con opción de limpiar
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
+    seleccionar_todos = st.checkbox(f"Seleccionar todos en {label}", key=f"select_all_{prefix}")
     for o in opciones:
-        default_value = select_all if not st.session_state.limpiar_filtros else False
+        default_value = seleccionar_todos if not st.session_state.limpiar_filtros else False
         key_name = f"{prefix}_{str(o)}"
         if st.checkbox(str(o), value=default_value, key=key_name):
             seleccionadas.append(o)
@@ -137,6 +142,7 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
+
 
 # --- KPIs ---
 col1, col2, col3, col4 = st.columns(4)

@@ -18,7 +18,7 @@ try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Información basada en e-Agrology. Bitácoras agronómicas 2012_1er Trimestre 2025 ")
+    st.success("Información basada en e-A. Bitácoras agronómicas 2012_1er Trimestre 2025 ")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()
@@ -58,23 +58,40 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
-# --- Sidebar de filtros ---
-st.sidebar.header("⚗️ Filtros")
-
-if 'limpiar_filtros' not in st.session_state:
+# --- Manejo de estado para limpieza de filtros ---
+if st.session_state.get("limpiar_filtros", False):
+    for k in list(st.session_state.keys()):
+        if k.startswith("ciclo_") or k.startswith("parcela_") or k.startswith("estado_") or \
+           k.startswith("regimen_") or k.startswith("proyecto_checkbox_") or k.startswith("select_all_"):
+            del st.session_state[k]
     st.session_state.limpiar_filtros = False
+    st.experimental_rerun()
 
-select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
+# --- Sidebar de filtros ---
+st.sidebar.markdown("""
+###  Filtros  ⚗️
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 4H21V6L14 13V19L10 21V13L3 6V4Z" fill="#4CAF50"/>
+  <path d="M14 13L21 6V4H3V6L10 13V21L14 19V13Z" stroke="#2E7D32" stroke-width="1.5"/>
+</svg>
+""", unsafe_allow_html=True)  
 
 datos_filtrados = datos.copy()
 
-# Función auxiliar para manejar checkboxes con opción de limpiar
-def checkbox_list(label, opciones, prefix):
+# Función auxiliar para manejar checkboxes con ocultación de opciones inválidas
+def checkbox_list(label, opciones, prefix, disponibles_actuales):
     seleccionadas = []
-    for o in opciones:
-        default_value = select_all if not st.session_state.limpiar_filtros else False
+    seleccionar_todos = st.checkbox(f"Seleccionar todos en {label}", key=f"select_all_{prefix}")
+    for o in disponibles_actuales:  # Solo mostrar opciones válidas
         key_name = f"{prefix}_{str(o)}"
-        if st.checkbox(str(o), value=default_value, key=key_name):
+        valor_default = seleccionar_todos if not st.session_state.get("limpiar_filtros", False) else False
+
+        checked = st.checkbox(
+            str(o),
+            value=valor_default,
+            key=key_name
+        )
+        if checked:
             seleccionadas.append(o)
     return seleccionadas
 
@@ -84,15 +101,20 @@ with st.sidebar.expander("Categoría del Proyecto"):
     categoria_seleccionada = st.selectbox("Selecciona una categoría", ["Todas"] + categorias)
 
     if categoria_seleccionada != "Todas":
-        proyectos = sorted(datos[datos["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
-        seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
+        proyectos = sorted(datos_filtrados[datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
 
         proyectos_seleccionados = []
-        for proyecto in proyectos:
-            valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
-            key_name = f"proyecto_{str(proyecto)}"
-            if st.checkbox(str(proyecto), value=valor_default, key=key_name):
-                proyectos_seleccionados.append(proyecto)
+
+        if len(proyectos) == 1:
+            proyectos_seleccionados = proyectos
+        else:
+            seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos", key="select_all_proyectos")
+            for proyecto in proyectos:
+                valor_default = seleccionar_todos_proyectos if not st.session_state.get("limpiar_filtros", False) else False
+                key_name = f"proyecto_checkbox_{str(proyecto)}"
+
+                if st.checkbox(str(proyecto), value=valor_default, key=key_name):
+                    proyectos_seleccionados.append(proyecto)
 
         datos_filtrados = datos_filtrados[
             (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
@@ -101,35 +123,41 @@ with st.sidebar.expander("Categoría del Proyecto"):
 
 # Filtro por Ciclo
 with st.sidebar.expander("Ciclo"):
-    ciclos = sorted(datos["Ciclo"].unique())
-    seleccion_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
+    ciclos_validos = sorted(datos["Ciclo"].unique())
+    disponibles = sorted(datos_filtrados["Ciclo"].unique())
+    seleccion_ciclos = checkbox_list("Ciclo", ciclos_validos, "ciclo", disponibles)
     if seleccion_ciclos:
         datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela
 with st.sidebar.expander("Tipo de Parcela"):
-    tipos_parcela = sorted(datos["Tipo_parcela"].unique())
-    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "parcela")
+    tipos_validos = sorted(datos["Tipo_parcela"].unique())
+    disponibles = sorted(datos_filtrados["Tipo_parcela"].unique())
+    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_validos, "parcela", disponibles)
     if seleccion_tipos_parcela:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
-    estados = sorted(datos["Estado"].unique())
-    seleccion_estados = checkbox_list("Estado", estados, "estado")
+    estados_validos = sorted(datos["Estado"].unique())
+    disponibles = sorted(datos_filtrados["Estado"].unique())
+    seleccion_estados = checkbox_list("Estado", estados_validos, "estado", disponibles)
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
 with st.sidebar.expander("Régimen Hídrico"):
-    regimenes = sorted(datos["Tipo_Regimen_Hidrico"].unique())
-    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
+    regimenes_validos = sorted(datos["Tipo_Regimen_Hidrico"].unique())
+    disponibles = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
+    seleccion_regimen = checkbox_list("Régimen", regimenes_validos, "regimen", disponibles)
     if seleccion_regimen:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
 
-# Resetear estado después de aplicar filtros
-if st.session_state.limpiar_filtros:
-    st.session_state.limpiar_filtros = False
+# Botón para limpiar todos los filtros
+with st.sidebar:
+    if st.button("🔄 Limpiar todos los filtros"):
+        st.session_state.limpiar_filtros = True
+        st.experimental_rerun()
 
 # --- Título Principal ---
 st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
@@ -137,6 +165,16 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
+
+# Ejemplo de visualización reactiva
+grafico = px.histogram(
+    datos_filtrados,
+    x="Estado",
+    color="Tipo_parcela",
+    title="Distribución de parcelas por Estado y Tipo",
+    barmode="group"
+)
+st.plotly_chart(grafico, use_container_width=True)
 
 # --- KPIs ---
 col1, col2, col3, col4 = st.columns(4)

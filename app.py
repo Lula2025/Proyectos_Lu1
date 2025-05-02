@@ -59,13 +59,15 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
 # --- Manejo de estado para limpieza de filtros ---
-if st.session_state.get("limpiar_filtros", False):
+if "limpiar_filtros" not in st.session_state:
+    st.session_state.limpiar_filtros = False
+
+if st.session_state.limpiar_filtros:
     for k in list(st.session_state.keys()):
         if k.startswith("ciclo_") or k.startswith("parcela_") or k.startswith("estado_") or \
            k.startswith("regimen_") or k.startswith("proyecto_checkbox_") or k.startswith("select_all_"):
             del st.session_state[k]
     st.session_state.limpiar_filtros = False
-    st.experimental_rerun()
 
 # --- Sidebar de filtros ---
 st.sidebar.markdown("""
@@ -175,6 +177,7 @@ grafico = px.histogram(
     barmode="group"
 )
 st.plotly_chart(grafico, use_container_width=True)
+
 
 # --- KPIs ---
 col1, col2, col3, col4 = st.columns(4)

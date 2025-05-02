@@ -76,10 +76,14 @@ datos_filtrados = datos.copy()
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
     seleccionar_todos = st.checkbox(f"Seleccionar todos en {label}", key=f"select_all_{prefix}")
+    todos_seleccionados = seleccionar_todos or all([
+        st.session_state.get(f"{prefix}_{str(o)}", False) for o in opciones
+    ])
     for o in opciones:
         default_value = seleccionar_todos if not st.session_state.limpiar_filtros else False
         key_name = f"{prefix}_{str(o)}"
-        if st.checkbox(str(o), value=default_value, key=key_name):
+        checked = st.checkbox(str(o), value=default_value, key=key_name)
+        if checked:
             seleccionadas.append(o)
     return seleccionadas
 
@@ -148,6 +152,7 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
+
 
 
 # --- KPIs ---

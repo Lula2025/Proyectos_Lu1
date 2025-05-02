@@ -18,7 +18,7 @@ try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Información basada en e-A. Bitácoras agronómicas 2012_1er Trimestre 2025")
+    st.success("Información basada en e-A. Bitácoras agronómicas 2012_1er Trimestre 2025 ")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()
@@ -33,7 +33,7 @@ with col1:
     st.image("assets/cimmyt.png", use_container_width=True)
 
 with col3:
-    st.image("assets/filtro_verde.png", use_container_width=True)
+    st.image("assets/ea.png", use_container_width=True)
 
 # --- Preprocesamiento ---
 columnas_requeridas = [
@@ -58,7 +58,6 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
-
 # --- Sidebar de filtros ---
 st.sidebar.header(" 🔽 Filtros")
 
@@ -69,22 +68,14 @@ select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=Fal
 
 datos_filtrados = datos.copy()
 
-# Función auxiliar para manejar checkboxes con ocultación de opciones inválidas
-def checkbox_list(label, opciones, prefix, disponibles_actuales):
+# Función auxiliar para manejar checkboxes con opción de limpiar
+def checkbox_list(label, opciones, prefix):
     seleccionadas = []
-    seleccionar_todos = seleccionar_todo_global or st.checkbox(f"Seleccionar todos en {label}", key=f"select_all_{prefix}")
-    if disponibles_actuales:
-        for o in disponibles_actuales:
-            key_name = f"{prefix}_{str(o)}"
-            checked = st.checkbox(
-                str(o),
-                value=seleccionar_todos,
-                key=key_name
-            )
-            if checked:
-                seleccionadas.append(o)
-    else:
-        st.markdown(f"*Sin opciones disponibles en {label}*")
+    for o in opciones:
+        default_value = select_all if not st.session_state.limpiar_filtros else False
+        key_name = f"{prefix}_{str(o)}"
+        if st.checkbox(str(o), value=default_value, key=key_name):
+            seleccionadas.append(o)
     return seleccionadas
 
 # Filtro por Categoría del Proyecto y Proyecto (subcategoría)
@@ -93,65 +84,52 @@ with st.sidebar.expander("Categoría del Proyecto"):
     categoria_seleccionada = st.selectbox("Selecciona una categoría", ["Todas"] + categorias)
 
     if categoria_seleccionada != "Todas":
-        proyectos = sorted(datos_filtrados[datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
+        proyectos = sorted(datos[datos["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
+        seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
+
         proyectos_seleccionados = []
+        for proyecto in proyectos:
+            valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
+            key_name = f"proyecto_{str(proyecto)}"
+            if st.checkbox(str(proyecto), value=valor_default, key=key_name):
+                proyectos_seleccionados.append(proyecto)
 
-        if len(proyectos) == 1:
-            proyectos_seleccionados = proyectos
-            st.markdown(f"**Proyecto único seleccionado automáticamente:** {proyectos[0]}")
-            datos_filtrados = datos_filtrados[
-                (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
-                (datos_filtrados["Proyecto"] == proyectos[0])
-            ]
-        elif proyectos:
-            seleccionar_todos_proyectos = seleccionar_todo_global or st.checkbox("Seleccionar todos los proyectos", key="select_all_proyectos")
-            for proyecto in proyectos:
-                key_name = f"proyecto_checkbox_{str(proyecto)}"
-                if st.checkbox(str(proyecto), value=seleccionar_todos_proyectos, key=key_name):
-                    proyectos_seleccionados.append(proyecto)
-
-            datos_filtrados = datos_filtrados[
-                (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
-                (datos_filtrados["Proyecto"].isin(proyectos_seleccionados))
-            ]
-        else:
-            st.markdown("*Sin proyectos disponibles*")
+        datos_filtrados = datos_filtrados[
+            (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
+            (datos_filtrados["Proyecto"].isin(proyectos_seleccionados))
+        ]
 
 # Filtro por Ciclo
-if not datos_filtrados.empty:
-    with st.sidebar.expander("Ciclo"):
-        ciclos_validos = sorted(datos["Ciclo"].unique())
-        disponibles = sorted(datos_filtrados["Ciclo"].unique())
-        seleccion_ciclos = checkbox_list("Ciclo", ciclos_validos, "ciclo", disponibles)
-        if seleccion_ciclos:
-            datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
+with st.sidebar.expander("Ciclo"):
+    ciclos = sorted(datos["Ciclo"].unique())
+    seleccion_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
+    if seleccion_ciclos:
+        datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela
-if not datos_filtrados.empty:
-    with st.sidebar.expander("Tipo de Parcela"):
-        tipos_validos = sorted(datos["Tipo_parcela"].unique())
-        disponibles = sorted(datos_filtrados["Tipo_parcela"].unique())
-        seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_validos, "parcela", disponibles)
-        if seleccion_tipos_parcela:
-            datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
+with st.sidebar.expander("Tipo de Parcela"):
+    tipos_parcela = sorted(datos["Tipo_parcela"].unique())
+    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "parcela")
+    if seleccion_tipos_parcela:
+        datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
-if not datos_filtrados.empty:
-    with st.sidebar.expander("Estado"):
-        estados_validos = sorted(datos["Estado"].unique())
-        disponibles = sorted(datos_filtrados["Estado"].unique())
-        seleccion_estados = checkbox_list("Estado", estados_validos, "estado", disponibles)
-        if seleccion_estados:
-            datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
+with st.sidebar.expander("Estado"):
+    estados = sorted(datos["Estado"].unique())
+    seleccion_estados = checkbox_list("Estado", estados, "estado")
+    if seleccion_estados:
+        datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
-if not datos_filtrados.empty:
-    with st.sidebar.expander("Régimen Hídrico"):
-        regimenes_validos = sorted(datos["Tipo_Regimen_Hidrico"].unique())
-        disponibles = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
-        seleccion_regimen = checkbox_list("Régimen", regimenes_validos, "regimen", disponibles)
-        if seleccion_regimen:
-            datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
+with st.sidebar.expander("Régimen Hídrico"):
+    regimenes = sorted(datos["Tipo_Regimen_Hidrico"].unique())
+    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
+    if seleccion_regimen:
+        datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
+
+# Resetear estado después de aplicar filtros
+if st.session_state.limpiar_filtros:
+    st.session_state.limpiar_filtros = False
 
 # --- Título Principal ---
 st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
@@ -159,17 +137,6 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
-
-# Ejemplo de visualización reactiva
-grafico = px.histogram(
-    datos_filtrados,
-    x="Estado",
-    color="Tipo_parcela",
-    title="Distribución de parcelas por Estado y Tipo",
-    barmode="group"
-)
-st.plotly_chart(grafico, use_container_width=True)
-
 
 # --- KPIs ---
 col1, col2, col3, col4 = st.columns(4)
@@ -292,8 +259,5 @@ if "Genero" in datos_filtrados.columns:
         textinfo='value',
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
-
-    st.plotly_chart(fig_genero, use_container_width=True)
-
 
     st.plotly_chart(fig_genero, use_container_width=True)

@@ -91,14 +91,19 @@ with st.sidebar.expander("Categoría del Proyecto"):
 
     if categoria_seleccionada != "Todas":
         proyectos = sorted(datos[datos["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
-        seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
 
         proyectos_seleccionados = []
-        for proyecto in proyectos:
-            valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
-            key_name = f"proyecto_{str(proyecto)}"
-            if st.checkbox(str(proyecto), value=valor_default, key=key_name):
-                proyectos_seleccionados.append(proyecto)
+
+        # Si solo hay un proyecto, lo seleccionamos automáticamente
+        if len(proyectos) == 1:
+            proyectos_seleccionados = proyectos
+        else:
+            seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
+            for proyecto in proyectos:
+                valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
+                key_name = f"proyecto_{str(proyecto)}"
+                if st.checkbox(str(proyecto), value=valor_default, key=key_name):
+                    proyectos_seleccionados.append(proyecto)
 
         datos_filtrados = datos_filtrados[
             (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &
@@ -149,7 +154,6 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
-
 
 
 

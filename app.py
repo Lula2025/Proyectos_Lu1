@@ -59,13 +59,8 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
 # --- Sidebar de filtros ---
-st.sidebar.markdown("""
 ###  Filtros  ⚗️
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M3 4H21V6L14 13V19L10 21V13L3 6V4Z" fill="#4CAF50"/>
-  <path d="M14 13L21 6V4H3V6L10 13V21L14 19V13Z" stroke="#2E7D32" stroke-width="1.5"/>
-</svg>
-""", unsafe_allow_html=True)
+""")
 
 # Botón seleccionar/deseleccionar todos
 st.sidebar.markdown("### Selección general")

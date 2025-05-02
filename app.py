@@ -86,7 +86,13 @@ with st.sidebar.expander("Categoría del Proyecto"):
     if categoria_seleccionada != "Todas":
         proyectos = sorted(datos[datos["Categoria_Proyecto"] == categoria_seleccionada]["Proyecto"].unique())
         seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
-        proyectos_seleccionados = st.multiselect("Selecciona proyecto(s)", proyectos, default=proyectos if seleccionar_todos_proyectos else [])
+
+        proyectos_seleccionados = []
+        for proyecto in proyectos:
+            valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
+            key_name = f"proyecto_{str(proyecto)}"
+            if st.checkbox(str(proyecto), value=valor_default, key=key_name):
+                proyectos_seleccionados.append(proyecto)
 
         datos_filtrados = datos_filtrados[
             (datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada) &

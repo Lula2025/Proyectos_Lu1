@@ -125,13 +125,17 @@ with st.sidebar.expander("Tipo de Parcela"):
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
     estados = sorted(datos["Estado"].unique())
-    seleccionar_todos_estados = st.checkbox("Seleccionar todos los estados", key="select_all_estado")
+    estados = ["Todos"] + estados  # Agregar opción "Todos"
     seleccion_estados = []
     for estado in estados:
-        valor_default = seleccionar_todos_estados if not st.session_state.limpiar_filtros else False
         key_estado = f"estado_{estado}"
+        valor_default = False if st.session_state.limpiar_filtros else (estado == "Todos")
         if st.checkbox(estado, value=valor_default, key=key_estado):
-            seleccion_estados.append(estado)
+            if estado == "Todos":
+                seleccion_estados = sorted(datos["Estado"].unique())
+                break
+            else:
+                seleccion_estados.append(estado)
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
@@ -152,6 +156,7 @@ st.title("🌾 Dashboard Bitácoras Agronómicas 2012-2025")
 if datos_filtrados.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados. Selecciona al menos una opción en los filtros.")
     st.stop()
+
 
 
 

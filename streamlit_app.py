@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Leer el archivo ZIP ---
+# --- Leer el archivo ZIo ---
 archivo_zip = "Archivos.zip"
 nombre_csv = "Datos_Historicos_cuenta_al26032025.csv"
 

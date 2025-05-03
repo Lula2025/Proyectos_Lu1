@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Leer el archivo ZIo ---
+# --- Leer el archivo ZIP ---
 archivo_zip = "Archivos.zip"
 nombre_csv = "Datos_Historicos_cuenta_al26032025.csv"
 
@@ -92,7 +92,7 @@ with st.sidebar.expander("Categoría del Proyecto"):
         proyectos_seleccionados = []
         for proyecto in proyectos:
             valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
-            key_name = f"proyecto_{str(proyecto)}"
+            key_name = f"filtro_proyecto_{str(proyecto)}"
             if st.checkbox(str(proyecto), value=valor_default, key=key_name):
                 proyectos_seleccionados.append(proyecto)
 
@@ -102,28 +102,28 @@ with st.sidebar.expander("Categoría del Proyecto"):
 # Filtro por Ciclo
 with st.sidebar.expander("Ciclo"):
     ciclos = sorted(datos_filtrados["Ciclo"].unique())
-    seleccion_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
+    seleccion_ciclos = checkbox_list("Ciclo", ciclos, "filtro_ciclo")
     if seleccion_ciclos:
         datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela
 with st.sidebar.expander("Tipo de Parcela"):
     tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
-    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "parcela")
+    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "filtro_tipo_parcela")
     if seleccion_tipos_parcela:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
     estados = sorted(datos_filtrados["Estado"].unique())
-    seleccion_estados = checkbox_list("Estado", estados, "estado")
+    seleccion_estados = checkbox_list("Estado", estados, "filtro_estado")
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
 with st.sidebar.expander("Régimen Hídrico"):
     regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
-    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
+    seleccion_regimen = checkbox_list("Régimen", regimenes, "filtro_regimen_hidrico")
     if seleccion_regimen:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
 
@@ -132,8 +132,6 @@ if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
 
 # --- Gráfico de distribución por género ---
-import plotly.express as px
-
 if "Genero" in datos_filtrados.columns:
     st.markdown("---")
     datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
@@ -164,4 +162,4 @@ if "Genero" in datos_filtrados.columns:
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 
-    st.plotly_chart(fig_genero, use_container_width=True)
+    st.plotly_chart(fig_genero, use_container_width=True, key="grafico_genero")

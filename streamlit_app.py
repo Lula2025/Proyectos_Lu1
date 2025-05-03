@@ -18,7 +18,7 @@ try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Información basada en e-A. Bitácoras agronómicas 2012_1er Trimestre 2025 ")
+    st.success("Información basada en e-Agrology. Bitácoras agronómicas 2012_1er Trimestre 2025 ")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()

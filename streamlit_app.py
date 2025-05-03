@@ -18,7 +18,7 @@ try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Información basada en e-Agrology. Bitácoras agronómicas 2012_1er Trimestre 2025 ")
+    st.success("Información basada en e-Agrology. Bitácoras agronómicas configuradas durante el año 2012_1er Trimestre 2025 ")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()
@@ -66,7 +66,6 @@ if 'limpiar_filtros' not in st.session_state:
 
 select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
 
-# Función auxiliar para manejar checkboxes múltiples
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
     for o in opciones:
@@ -92,7 +91,7 @@ with st.sidebar.expander("Categoría del Proyecto"):
         proyectos_seleccionados = []
         for proyecto in proyectos:
             valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
-            key_name = f"filtro_proyecto_{str(proyecto)}"
+            key_name = f"proyecto_{str(proyecto)}"
             if st.checkbox(str(proyecto), value=valor_default, key=key_name):
                 proyectos_seleccionados.append(proyecto)
 
@@ -102,34 +101,88 @@ with st.sidebar.expander("Categoría del Proyecto"):
 # Filtro por Ciclo
 with st.sidebar.expander("Ciclo"):
     ciclos = sorted(datos_filtrados["Ciclo"].unique())
-    seleccion_ciclos = checkbox_list("Ciclo", ciclos, "filtro_ciclo")
+    seleccion_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
     if seleccion_ciclos:
         datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # Filtro por Tipo de Parcela
 with st.sidebar.expander("Tipo de Parcela"):
     tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
-    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "filtro_tipo_parcela")
+    seleccion_tipos_parcela = checkbox_list("Tipo Parcela", tipos_parcela, "parcela")
     if seleccion_tipos_parcela:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
 with st.sidebar.expander("Estado"):
     estados = sorted(datos_filtrados["Estado"].unique())
-    seleccion_estados = checkbox_list("Estado", estados, "filtro_estado")
+    seleccion_estados = checkbox_list("Estado", estados, "estado")
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
 with st.sidebar.expander("Régimen Hídrico"):
     regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
-    seleccion_regimen = checkbox_list("Régimen", regimenes, "filtro_regimen_hidrico")
+    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
     if seleccion_regimen:
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
 
-# Resetear estado después de aplicar filtros
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
+
+# --- Gráficas principales ---
+col5, col6 = st.columns(2)
+
+with col5:
+    color_arg = "Tipo_parcela" if seleccion_tipos_parcela else None
+    bitacoras_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"]).size().reset_index(name="Bitácoras") if color_arg else datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
+    fig_bitacoras = px.bar(
+        bitacoras_por_anio,
+        x="Anio",
+        y="Bitácoras",
+        color=color_arg,
+        title="📋 Número de Bitácoras por Año"
+    )
+    st.plotly_chart(fig_bitacoras, use_container_width=True)
+
+with col6:
+    area_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Area_total_de_la_parcela(ha)"].sum().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Area_total_de_la_parcela(ha)"].sum().reset_index()
+    fig_area = px.bar(
+        area_por_anio,
+        x="Anio",
+        y="Area_total_de_la_parcela(ha)",
+        color="Tipo_parcela" if seleccion_tipos_parcela else None,
+        title="🌿 Área Total de Parcelas por Año",
+        labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
+    )
+    st.plotly_chart(fig_area, use_container_width=True)
+
+col7, col8 = st.columns(2)
+
+with col7:
+    if "Id_Parcela(Unico)" in datos_filtrados.columns:
+        parcelas_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Parcela(Unico)"].nunique().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Parcela(Unico)"].nunique().reset_index()
+        fig_parcelas = px.bar(
+            parcelas_por_anio,
+            x="Anio",
+            y="Id_Parcela(Unico)",
+            color="Tipo_parcela" if seleccion_tipos_parcela else None,
+            title="🌄 Número de Parcelas por Año",
+            labels={"Id_Parcela(Unico)": "Parcelas"}
+        )
+        st.plotly_chart(fig_parcelas, use_container_width=True)
+
+with col8:
+    if "Id_Productor" in datos_filtrados.columns:
+        productores_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Productor"].nunique().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
+        fig_productores = px.bar(
+            productores_por_anio,
+            x="Anio",
+            y="Id_Productor",
+            color="Tipo_parcela" if seleccion_tipos_parcela else None,
+            title="👩‍🌾👨‍🌾 Número de Productores por Año",
+            labels={"Id_Productor": "Productores"}
+        )
+        st.plotly_chart(fig_productores, use_container_width=True)
 
 # --- Gráfico de distribución por género ---
 if "Genero" in datos_filtrados.columns:
@@ -162,4 +215,5 @@ if "Genero" in datos_filtrados.columns:
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 
-    st.plotly_chart(fig_genero, use_container_width=True, key="grafico_genero")
+    st.plotly_chart(fig_genero, use_container_width=True)
+

@@ -129,6 +129,20 @@ with st.sidebar.expander("Régimen Hídrico"):
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
 
+# --- Resumen de cifras totales ---
+st.markdown("### 📊 Resumen General de Datos Filtrados")
+
+total_bitacoras = len(datos_filtrados)
+total_area = datos_filtrados["Area_total_de_la_parcela(ha)"].sum()
+total_parcelas = datos_filtrados["Id_Parcela(Unico)"].nunique() if "Id_Parcela(Unico)" in datos_filtrados.columns else 0
+total_productores = datos_filtrados["Id_Productor"].nunique() if "Id_Productor" in datos_filtrados.columns else 0
+
+col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+col_r1.metric("📋 Total de Bitácoras", f"{total_bitacoras:,}")
+col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}")
+col_r3.metric("🌄 Número de Parcelas", f"{total_parcelas:,}")
+col_r4.metric("👩‍🌾 Productores(as)", f"{total_productores:,}")
+
 # --- Gráficas principales ---
 col5, col6 = st.columns(2)
 
@@ -216,4 +230,3 @@ if "Genero" in datos_filtrados.columns:
     )
 
     st.plotly_chart(fig_genero, use_container_width=True)
-

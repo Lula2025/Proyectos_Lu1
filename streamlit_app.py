@@ -329,7 +329,7 @@ st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(60
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---
-st.markdown("### 📋 Tabla de distribución por Categoría del Proyecto")
+st.markdown("### 📋 Tabla de Distribución por Categoría del Proyecto")
 
 # Pivotear para mostrar cada categoría como columna
 tabla_pct = conteo.pivot_table(

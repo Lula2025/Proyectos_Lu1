@@ -265,22 +265,48 @@ fig_distribucion.update_layout(
 
 st.plotly_chart(fig_distribucion, use_container_width=True)
 
-# --- Tabla de porcentajes por año y categoría adaptada al contenido ---
-st.markdown("### 📋 Tabla de distribución")
 
-# Pivotear para mostrar cada categoría como columna
-tabla_pct = conteo.pivot_table(
+# --- Tabla de porcentajes por año y categoría adaptada al contenido ---
+# --- Recuento por Año, Categoría y Proyecto ---
+conteo_mix = (
+    datos_filtrados
+    .groupby(["Anio", "Categoria_Proyecto", "Proyecto"])
+    .size()
+    .reset_index(name="Registros")
+)
+
+# Total por año
+total_anual = conteo_mix.groupby("Anio")["Registros"].sum().reset_index(name="Total")
+
+# Calcular porcentaje del total por año
+conteo_mix = conteo_mix.merge(total_anual, on="Anio")
+conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(2)
+
+# Obtener el proyecto dominante por año
+proyecto_max = (
+    conteo_mix.loc[conteo_mix.groupby("Anio")["Porcentaje"].idxmax()]
+    .set_index("Anio")["Proyecto"]
+)
+
+# Crear tabla con MultiIndex (Categoria -> Proyecto) como columnas
+conteo_pivot = conteo_mix.pivot_table(
     index="Anio",
-    columns="Categoria_Proyecto",
+    columns=["Categoria_Proyecto", "Proyecto"],
     values="Porcentaje",
     fill_value=0
 )
 
-# Redondear a 2 decimales y convertir a string con % para presentación
-tabla_pct = tabla_pct.round(2).astype(str) + " %"
+# Agregar columnas de total y proyecto dominante
+conteo_pivot.insert(0, "🔢 Total Registros", total_anual.set_index("Anio")["Total"])
+conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Resetear índice para que 'Anio' sea una columna normal
-tabla_pct = tabla_pct.reset_index()
+# Formatear % en todas las columnas excepto las dos primeras
+tabla_pct_format = conteo_pivot.copy()
+for col in tabla_pct_format.columns:
+    if col not in ["🔢 Total Registros", "🏆 Proyecto Dominante"]:
+        tabla_pct_format[col] = tabla_pct_format[col].astype(str) + " %"
 
-# Mostrar tabla sin scroll horizontal (adaptada al contenido)
-st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
+# Resetear índice y mostrar tabla
+tabla_pct_format = tabla_pct_format.reset_index()
+st.markdown("### 📋 Tabla de distribución porcentual por Proyecto y Categoría")
+st.dataframe(tabla_pct_format, use_container_width=False, height=min(600, 40 * len(tabla_pct_format)))

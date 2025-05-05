@@ -234,7 +234,7 @@ if "Genero" in datos_filtrados.columns:
 
 
 # --- Gráfica: Distribución porcentual por Categoría del Proyecto cada año ---
-st.markdown("###")
+st.markdown("### Distribución Porcentual Anual por  Categoría del Proyecto")
 
 # Conteo por año y categoría
 conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
@@ -252,7 +252,7 @@ fig_distribucion = px.area(
     x="Anio",
     y="Porcentaje",
     color="Categoria_Proyecto",
-    title="📈 Distribución (%)  de Numero de Bitácoras  por Categoría del Proyecto a través de los años",
+    title="📈 Distribución(%)  de Numero de Bitácoras",
     labels={"Porcentaje": "% del total por año"},
     groupnorm="percent"
 )
@@ -266,7 +266,7 @@ fig_distribucion.update_layout(
 st.plotly_chart(fig_distribucion, use_container_width=True)
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---
-st.markdown("### 📋 Tabla de distribución porcentual anual")
+st.markdown("### 📋 Tabla de distribución")
 
 # Pivotear para mostrar cada categoría como columna
 tabla_pct = conteo.pivot_table(

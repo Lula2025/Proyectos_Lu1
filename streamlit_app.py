@@ -265,7 +265,7 @@ fig_distribucion.update_layout(
 
 st.plotly_chart(fig_distribucion, use_container_width=True)
 
-# --- Recuento por Año, Categoría y Proyecto ---
+
 # --- Recuento por Año, Categoría y Proyecto ---
 conteo_mix = (
     datos_filtrados
@@ -299,11 +299,15 @@ conteo_pivot = conteo_mix.pivot_table(
 conteo_pivot.insert(0, "🔢 Total Registros", total_anual.set_index("Anio")["Total"])
 conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Copiar y formatear: solo columnas de porcentaje (MultiIndex)
+# Copiar y formatear: solo columnas de porcentaje (MultiIndex) añadiendo el %
 tabla_formateada = conteo_pivot.copy()
 for col in tabla_formateada.columns:
-    if isinstance(col, tuple):
+    if isinstance(col, tuple):  # Solo formatear las columnas de porcentaje
         tabla_formateada[col] = tabla_formateada[col].astype(str) + " %"
+
+# Mostrar tabla sin el % en "Total Registros" y "Proyecto Dominante"
+tabla_formateada["🔢 Total Registros"] = tabla_formateada["🔢 Total Registros"].astype(str)
+tabla_formateada["🏆 Proyecto Dominante"] = tabla_formateada["🏆 Proyecto Dominante"].astype(str)
 
 # Mostrar tabla
 st.markdown("### 📋 Tabla de distribución porcentual por Proyecto y Categoría")

@@ -60,9 +60,9 @@ datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
 # --- Crear mapa de colores fijo para Tipo_parcela ---
 color_map_parcela = {
-   "Área de impacto": "#1f77b4",   # Azul
-   "Área de extensión": "#2ca02c"  # Verde
-   "Módulo": "#d62728",            # Rojo
+    "Área de impacto": "#1f77b4",   # Azul
+    "Módulo": "#d62728",            # Rojo
+    "Área de extensión": "#2ca02c"  # Verde
 }
 
 # --- Sidebar de filtros encadenados ---

@@ -262,7 +262,7 @@ fig_distribucion = px.area(
     x="Anio",
     y="Porcentaje",
     color="Categoria_Proyecto",
-    title="",
+    title=" ",
     labels={"Porcentaje": "% del total por año"},
     groupnorm="percent"
 )

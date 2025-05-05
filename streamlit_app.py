@@ -315,10 +315,4 @@ tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, f
 
 # Mostrar tabla final sin % en ningún valor
 st.markdown("### 📋 Tabla de distribución porcentual por Proyecto y Categoría")
-# Convertir el % por categoría a numérico por si está en formato string
-tabla_final["% por Categoría del Proyecto"] = pd.to_numeric(tabla_final["% por Categoría del Proyecto"], errors='coerce').fillna(0)
-
-
-# Mostrar la tabla
-st.dataframe(tabla_final, use_container_width=False, height=min(600, 40 * len(tabla_final)))
-
+st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))

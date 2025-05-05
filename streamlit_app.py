@@ -274,36 +274,53 @@ conteo_mix = (
     .reset_index(name="Registros")
 )
 
-# Total por año
-total_anual = conteo_mix.groupby("Anio")["Registros"].sum().reset_index(name="Total")
 
-# Calcular porcentaje del total por año
-conteo_mix = conteo_mix.merge(total_anual, on="Anio")
-conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(2)
 
-# Obtener el proyecto dominante por año
-proyecto_max = (
-    conteo_mix.loc[conteo_mix.groupby("Anio")["Porcentaje"].idxmax()]
-    .set_index("Anio")["Proyecto"]
+# --- Tabla final con distribución por Categoría del Proyecto y Proyecto ---
+st.markdown("### Distribución de Registros por Proyecto y Categoría del Proyecto")
+
+# Agrupación base
+tabla_final = datos_filtrados.groupby(["Anio", "Categoria_Proyecto", "Proyecto"]).size().reset_index(name="Número de Registros")
+
+# Calcular porcentaje por año (distribución dentro del año)
+total_por_anio = datos_filtrados.groupby("Anio").size().rename("Total Anual")
+tabla_final = tabla_final.merge(total_por_anio, on="Anio")
+tabla_final["% del Total por Año"] = (tabla_final["Número de Registros"] / tabla_final["Total Anual"]) * 100
+tabla_final["% del Total por Año"] = tabla_final["% del Total por Año"].round(2)
+
+# Proyecto dominante por categoría y año
+proyecto_dominante = tabla_final.loc[tabla_final.groupby(["Anio", "Categoria_Proyecto"])["Número de Registros"].idxmax()]
+proyecto_dominante = proyecto_dominante[["Anio", "Categoria_Proyecto", "Proyecto"]].rename(columns={"Proyecto": "Proyecto Dominante"})
+
+# Agregar proyecto dominante
+tabla_final = tabla_final.merge(proyecto_dominante, on=["Anio", "Categoria_Proyecto"], how="left")
+
+# Eliminar decimales del número de registros
+tabla_final["Número de Registros"] = tabla_final["Número de Registros"].astype(int)
+
+# --- Agregar columna: % por Categoría del Proyecto ---
+# Calcular total anual
+total_anual = datos_filtrados.groupby("Anio").size().rename("Total_Anual")
+
+# Calcular total por categoría
+conteo_categoria = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().rename("Total_Categoria")
+
+# Crear DataFrame con % por Categoría del Proyecto
+df_categoria = pd.concat([conteo_categoria, total_anual], axis=1).reset_index()
+df_categoria["% por Categoría del Proyecto"] = (df_categoria["Total_Categoria"] / df_categoria["Total_Anual"]) * 100
+df_categoria["% por Categoría del Proyecto"] = df_categoria["% por Categoría del Proyecto"].apply(lambda x: f"{x:.2f}")
+
+# Unir con la tabla final
+tabla_final = tabla_final.merge(
+    df_categoria[["Anio", "Categoria_Proyecto", "% por Categoría del Proyecto"]],
+    on=["Anio", "Categoria_Proyecto"],
+    how="left"
 )
 
-# Crear tabla con MultiIndex (Categoria -> Proyecto) como columnas
-conteo_pivot = conteo_mix.pivot_table(
-    index="Anio",
-    columns=["Categoria_Proyecto", "Proyecto"],
-    values="Porcentaje",
-    fill_value=0
-)
+# Reordenar columnas para que el nuevo porcentaje quede al final
+columnas_ordenadas = [col for col in tabla_final.columns if col != "% por Categoría del Proyecto"] + ["% por Categoría del Proyecto"]
+tabla_final = tabla_final[columnas_ordenadas]
 
-# Agregar columnas de total y proyecto dominante
-conteo_pivot.insert(0, "🔢 Total Registros", total_anual.set_index("Anio")["Total"])
-conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
-
-# Convertir todos los valores a texto sin símbolo %
-tabla_final = conteo_pivot.copy()
-tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
-
-# Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla de distribución porcentual por Proyecto y Categoría")
-st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
+# Mostrar la tabla
+st.dataframe(tabla_final, use_container_width=False, height=min(600, 40 * len(tabla_final)))
 

@@ -230,7 +230,7 @@ if "Genero" in datos_filtrados.columns:
         datos_genero,
         names="Genero",
         values="Registros",
-        title="👩👨 Distribución de productores(as) por Género",
+        title="👩👨 Distribución Total de Productores(as) por Género",
         color="Genero",
         color_discrete_map=color_map_genero
     )
@@ -244,7 +244,7 @@ if "Genero" in datos_filtrados.columns:
 
 
 # --- Gráfica: Distribución porcentual por Categoría del Proyecto cada año ---
-st.markdown("### Distribución (%)  respecto al Numero de Bitácoras por Proyecto y Categoría del Proyecto")
+st.markdown("### 📈 Distribución (%)  respecto al Numero de Bitácoras por Proyecto y Categoría del Proyecto")
 
 # Conteo por año y categoría
 conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
@@ -262,7 +262,7 @@ fig_distribucion = px.area(
     x="Anio",
     y="Porcentaje",
     color="Categoria_Proyecto",
-    title="📈 Distribución(%) Anual  del Numero de Bitácoras",
+    title="",
     labels={"Porcentaje": "% del total por año"},
     groupnorm="percent"
 )

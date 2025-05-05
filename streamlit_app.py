@@ -299,17 +299,11 @@ conteo_pivot = conteo_mix.pivot_table(
 conteo_pivot.insert(0, "🔢 Total Registros", total_anual.set_index("Anio")["Total"])
 conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Copiar y formatear: solo columnas de porcentaje (MultiIndex) añadiendo el %
-tabla_formateada = conteo_pivot.copy()
-for col in tabla_formateada.columns:
-    if isinstance(col, tuple):  # Solo formatear las columnas de porcentaje
-        tabla_formateada[col] = tabla_formateada[col].astype(str) + " %"
+# Convertir todos los valores a texto sin símbolo %
+tabla_final = conteo_pivot.copy()
+tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
 
-# Mostrar tabla sin el % en "Total Registros" y "Proyecto Dominante"
-tabla_formateada["🔢 Total Registros"] = tabla_formateada["🔢 Total Registros"].astype(str)
-tabla_formateada["🏆 Proyecto Dominante"] = tabla_formateada["🏆 Proyecto Dominante"].astype(str)
-
-# Mostrar tabla
-st.markdown("### 📋 Tabla de distribución porcentual por Proyecto y Categoría")
-st.dataframe(tabla_formateada.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_formateada)))
+# Mostrar tabla final sin % en ningún valor
+st.markdown("### 📋 Tabla de distribución porcentual por Proyecto y Categoría (sin %)")
+st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 

@@ -58,6 +58,11 @@ datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
 
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
+# --- Crear mapa de colores fijo para Tipo_parcela ---
+tipos_parcela_unicos = sorted(datos["Tipo_parcela"].unique())
+colores_paleta = px.colors.qualitative.Plotly
+color_map_parcela = {tipo: colores_paleta[i % len(colores_paleta)] for i, tipo in enumerate(tipos_parcela_unicos)}
+
 # --- Sidebar de filtros encadenados ---
 st.sidebar.header(" 🔽 Filtros")
 
@@ -143,7 +148,6 @@ col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}")
 col_r3.metric("🌄 Número de Parcelas", f"{total_parcelas:,}")
 col_r4.metric("👩‍🌾 Productores(as)", f"{total_productores:,}")
 
-
 # --- Gráficas principales ---
 col5, col6 = st.columns(2)
 
@@ -155,6 +159,7 @@ with col5:
         x="Anio",
         y="Bitácoras",
         color=color_arg,
+        color_discrete_map=color_map_parcela if color_arg else None,
         title="📋 Número de Bitácoras por Año"
     )
     st.plotly_chart(fig_bitacoras, use_container_width=True)
@@ -166,6 +171,7 @@ with col6:
         x="Anio",
         y="Area_total_de_la_parcela(ha)",
         color="Tipo_parcela" if seleccion_tipos_parcela else None,
+        color_discrete_map=color_map_parcela if seleccion_tipos_parcela else None,
         title="🌿 Área Total de Parcelas por Año",
         labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
     )
@@ -181,6 +187,7 @@ with col7:
             x="Anio",
             y="Id_Parcela(Unico)",
             color="Tipo_parcela" if seleccion_tipos_parcela else None,
+            color_discrete_map=color_map_parcela if seleccion_tipos_parcela else None,
             title="🌄 Número de Parcelas por Año",
             labels={"Id_Parcela(Unico)": "Parcelas"}
         )
@@ -194,6 +201,7 @@ with col8:
             x="Anio",
             y="Id_Productor",
             color="Tipo_parcela" if seleccion_tipos_parcela else None,
+            color_discrete_map=color_map_parcela if seleccion_tipos_parcela else None,
             title="👩‍🌾👨‍🌾 Número de Productores por Año",
             labels={"Id_Productor": "Productores"}
         )

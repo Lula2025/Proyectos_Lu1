@@ -62,7 +62,7 @@ datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 color_map_parcela = {
     "Área de impacto": "#1f77b4",   # Azul
     "Área de extensión": "#2ca02c",  # Verde
-    "Módulo": "#d62728"            # Rojo
+    "Módulo": "#d62728" ,           # Rojo
 }
 
 # --- Sidebar de filtros encadenados ---

@@ -233,35 +233,50 @@ if "Genero" in datos_filtrados.columns:
     st.plotly_chart(fig_genero, use_container_width=True)
 
 
-# --- Gráfica de cambio porcentual en Categoria_Proyecto por año ---
-st.markdown("### 📈 Cambio porcentual anual por Categoría del Proyecto")
+# --- Gráfica: Distribución porcentual por Categoría del Proyecto cada año ---
+st.markdown("### 📊 Distribución porcentual anual por Categoría del Proyecto")
 
-# Conteo de registros por año y categoría
-conteo_cat = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
+# Conteo por año y categoría
+conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
 
-# Pivot para tener años como filas y categorías como columnas
-pivot_cat = conteo_cat.pivot(index="Anio", columns="Categoria_Proyecto", values="Registros").fillna(0)
+# Calcular el total por año
+totales_anio = conteo.groupby("Anio")["Registros"].transform("sum")
 
-# Calcular el cambio porcentual año a año
-cambio_pct = pivot_cat.pct_change() * 100
-cambio_pct = cambio_pct.reset_index().melt(id_vars="Anio", var_name="Categoria_Proyecto", value_name="Cambio (%)")
+# Calcular porcentaje que representa cada categoría
+conteo["Porcentaje"] = (conteo["Registros"] / totales_anio) * 100
 
-# Filtrar para mostrar solo los años posteriores al primero (ya que el primer año no tiene comparación previa)
-cambio_pct = cambio_pct[cambio_pct["Anio"] > cambio_pct["Anio"].min()]
 
-# Mostrar gráfico si hay datos suficientes
-if not cambio_pct.empty:
-    fig_cambio = px.line(
-        cambio_pct,
-        x="Anio",
-        y="Cambio (%)",
-        color="Categoria_Proyecto",
-        markers=True,
-        title="📊 Cambio porcentual anual en el número de registros por Categoría del Proyecto",
-        labels={"Cambio (%)": "Cambio (%) anual"},
-        template="plotly_white"
-    )
-    fig_cambio.update_layout(legend_title_text='Categoría')
-    st.plotly_chart(fig_cambio, use_container_width=True)
-else:
-    st.info("No hay suficientes datos distribuidos en varios años para calcular el cambio porcentual.")
+# Gráfico de áreas apiladas (líneas acumulativas en %) por categoría
+fig_distribucion = px.area(
+    conteo,
+    x="Anio",
+    y="Porcentaje",
+    color="Categoria_Proyecto",
+    title="📊 Distribución porcentual por Categoría del Proyecto a través de los años",
+    labels={"Porcentaje": "% del total por año"},
+    groupnorm="percent"
+)
+
+fig_distribucion.update_layout(
+    yaxis_ticksuffix="%",
+    legend_title_text='Categoría',
+    template="plotly_white"
+)
+
+st.plotly_chart(fig_distribucion, use_container_width=True)
+
+# --- Tabla de porcentajes por año y categoría ---
+st.markdown("### 📋 Tabla de distribución porcentual anual")
+
+# Pivotear para mostrar cada categoría como columna
+tabla_pct = conteo.pivot_table(
+    index="Anio",
+    columns="Categoria_Proyecto",
+    values="Porcentaje",
+    fill_value=0
+)
+
+# Redondear a 2 decimales
+tabla_pct = tabla_pct.round(2)
+
+st.dataframe(tabla_pct, use_container_width=True)

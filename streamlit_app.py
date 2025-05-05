@@ -252,7 +252,7 @@ fig_distribucion = px.area(
     x="Anio",
     y="Porcentaje",
     color="Categoria_Proyecto",
-    title="📈 Distribución porcentual por Categoría del Proyecto a través de los años",
+    title="📈 Distribución (%)  de Numero de Bitácoras  por Categoría del Proyecto a través de los años",
     labels={"Porcentaje": "% del total por año"},
     groupnorm="percent"
 )

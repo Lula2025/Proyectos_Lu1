@@ -164,6 +164,9 @@ with col5:
         color_discrete_map=color_map_parcela if color_arg else None,
         title="📋 Número de Bitácoras por Año"
     )
+
+   # Forzar colores usando update_traces para asegurarnos de que las barras se pinten correctamente
+    fig_bitacoras.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno para mejor visibilidad
     st.plotly_chart(fig_bitacoras, use_container_width=True)
 
 with col6:
@@ -177,7 +180,11 @@ with col6:
         title="🌿 Área Total de Parcelas por Año",
         labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
     )
+    # Forzar colores usando update_traces para asegurar la correcta aplicación del color
+    fig_area.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno
     st.plotly_chart(fig_area, use_container_width=True)
+
+
 
 col7, col8 = st.columns(2)
 

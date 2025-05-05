@@ -236,26 +236,32 @@ if "Genero" in datos_filtrados.columns:
 # --- Gráfica de cambio porcentual en Categoria_Proyecto por año ---
 st.markdown("### 📈 Cambio porcentual anual por Categoría del Proyecto")
 
-# Conteo por año y categoría
+# Conteo de registros por año y categoría
 conteo_cat = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
 
-# Pivot para facilitar cálculo de % de cambio
+# Pivot para tener años como filas y categorías como columnas
 pivot_cat = conteo_cat.pivot(index="Anio", columns="Categoria_Proyecto", values="Registros").fillna(0)
 
 # Calcular el cambio porcentual año a año
-cambio_pct = pivot_cat.pct_change().fillna(0) * 100
+cambio_pct = pivot_cat.pct_change() * 100
 cambio_pct = cambio_pct.reset_index().melt(id_vars="Anio", var_name="Categoria_Proyecto", value_name="Cambio (%)")
 
-# Filtrar para mostrar solo años posteriores al primero
+# Filtrar para mostrar solo los años posteriores al primero (ya que el primer año no tiene comparación previa)
 cambio_pct = cambio_pct[cambio_pct["Anio"] > cambio_pct["Anio"].min()]
 
-# Gráfico de líneas
-fig_cambio = px.line(
-    cambio_pct,
-    x="Anio",
-    y="Cambio (%)",
-    color="Categoria_Proyecto",
-    markers=True,
-    title="📊 Cambio porcentual anual en el número de registros por Categoría del Proyecto",
-    labels={"Cambio (%)": "Cambio (%) anual"}
-)
+# Mostrar gráfico si hay datos suficientes
+if not cambio_pct.empty:
+    fig_cambio = px.line(
+        cambio_pct,
+        x="Anio",
+        y="Cambio (%)",
+        color="Categoria_Proyecto",
+        markers=True,
+        title="📊 Cambio porcentual anual en el número de registros por Categoría del Proyecto",
+        labels={"Cambio (%)": "Cambio (%) anual"},
+        template="plotly_white"
+    )
+    fig_cambio.update_layout(legend_title_text='Categoría')
+    st.plotly_chart(fig_cambio, use_container_width=True)
+else:
+    st.info("No hay suficientes datos distribuidos en varios años para calcular el cambio porcentual.")

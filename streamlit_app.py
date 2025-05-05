@@ -130,7 +130,7 @@ if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
 
 # --- Resumen de cifras totales ---
-st.markdown("### 📊 Resumen General de Datos Filtrados")
+st.markdown("### 📊 Resumen Total")
 
 total_bitacoras = len(datos_filtrados)
 total_area = datos_filtrados["Area_total_de_la_parcela(ha)"].sum()
@@ -142,6 +142,7 @@ col_r1.metric("📋 Total de Bitácoras", f"{total_bitacoras:,}")
 col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}")
 col_r3.metric("🌄 Número de Parcelas", f"{total_parcelas:,}")
 col_r4.metric("👩‍🌾 Productores(as)", f"{total_productores:,}")
+
 
 # --- Gráficas principales ---
 col5, col6 = st.columns(2)
@@ -230,3 +231,31 @@ if "Genero" in datos_filtrados.columns:
     )
 
     st.plotly_chart(fig_genero, use_container_width=True)
+
+
+# --- Gráfica de cambio porcentual en Categoria_Proyecto por año ---
+st.markdown("### 📈 Cambio porcentual anual por Categoría del Proyecto")
+
+# Conteo por año y categoría
+conteo_cat = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
+
+# Pivot para facilitar cálculo de % de cambio
+pivot_cat = conteo_cat.pivot(index="Anio", columns="Categoria_Proyecto", values="Registros").fillna(0)
+
+# Calcular el cambio porcentual año a año
+cambio_pct = pivot_cat.pct_change().fillna(0) * 100
+cambio_pct = cambio_pct.reset_index().melt(id_vars="Anio", var_name="Categoria_Proyecto", value_name="Cambio (%)")
+
+# Filtrar para mostrar solo años posteriores al primero
+cambio_pct = cambio_pct[cambio_pct["Anio"] > cambio_pct["Anio"].min()]
+
+# Gráfico de líneas
+fig_cambio = px.line(
+    cambio_pct,
+    x="Anio",
+    y="Cambio (%)",
+    color="Categoria_Proyecto",
+    markers=True,
+    title="📊 Cambio porcentual anual en el número de registros por Categoría del Proyecto",
+    labels={"Cambio (%)": "Cambio (%) anual"}
+)

@@ -367,7 +367,7 @@ st.markdown("""
 <style>
     .tabla-ajustada {
         font-family: sans-serif;
-        font-size: 9px;
+        font-size: 11px;  /* Tamaño de letra reducido */
         border-collapse: collapse;
         width: auto;
     }
@@ -375,15 +375,16 @@ st.markdown("""
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
-        padding: 2px 6px;
+        padding: 1px 4px;  /* Menos espacio */
         vertical-align: bottom;
+        font-size: 9px;
     }
     .tabla-ajustada td {
         text-align: right;
         white-space: nowrap;
-        padding: 2px 4px;
-        font-size: 9px;
-        width: 1%;  /* Fuerza a ajustarse al contenido más corto posible */
+        padding: 1px 3px;  /* Menos espacio */
+        font-size: 9px;   /* Letra aún más pequeña para celdas */
+        width: 1%;
     }
 </style>
 """, unsafe_allow_html=True)

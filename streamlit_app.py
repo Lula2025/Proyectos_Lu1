@@ -179,7 +179,7 @@ with col6:
         y="Area_total_de_la_parcela(ha)",
         color="Tipo_parcela" if seleccion_tipos_parcela else None,
         color_discrete_map=color_map_parcela if seleccion_tipos_parcela else None,
-        title="🌿 Área Total de Parcelas por Año",
+        title="🌿 Área Total de Parcelas por  ",
         labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
     )
     # Forzar colores usando update_traces para asegurar la correcta aplicación del color
@@ -255,7 +255,7 @@ if "Genero" in datos_filtrados.columns:
 st.markdown("---")  # Esta es la línea de separación
 
 # --- Gráfica: Distribución porcentual por Categoría del Proyecto cada año ---
-st.markdown("### 📈 Distribución (%)  respecto al Numero de Bitácoras por Proyecto y Categoría del Proyecto")
+st.markdown("### 📈 Distribución (%)  respecto al Numero de Bitácoras por Proyecto y Categoría del Proyecto por Año")
 
 # Conteo por año y categoría
 conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
@@ -327,13 +327,13 @@ tabla_final = conteo_pivot.copy()
 tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
 
 # Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría")
+st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---
-st.markdown("### 📋 Tabla de Distribución por Categoría del Proyecto")
+st.markdown("### 📋 Tabla de Distribución por Categoría del Proyecto, por Año")
 
 # Pivotear para mostrar cada categoría como columna
 tabla_pct = conteo.pivot_table(

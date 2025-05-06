@@ -347,12 +347,11 @@ tabla_pct = conteo.pivot_table(
     fill_value=0
 )
 
-# Redondear a 2 decimales y convertir a string con % para presentación
-tabla_pct = tabla_pct.round(2).astype(str) + " %"
+# Redondear a 2 decimales SIN agregar "%"
+tabla_pct = tabla_pct.round(2)
 
 # Resetear índice para que 'Anio' sea una columna normal
 tabla_pct = tabla_pct.reset_index()
 
 # Mostrar tabla sin scroll horizontal (adaptada al contenido)
 st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
-

@@ -369,36 +369,17 @@ html_table = tabla_tooltip.reset_index().to_html(
 # Estilos CSS para compactar la tabla y ajustar al contenido numérico
 st.markdown("""
 <style>
-    .tabla-ajustada {
-        font-family: sans-serif;
-        font-size: 11px;
-        border-collapse: collapse;
-        width: auto;
-    }
-    .tabla-ajustada th {
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        padding: 1px 4px;
-        vertical-align: bottom;
-        font-size: 9px;
-    }
     .tabla-ajustada td {
+        text-align: right;
         white-space: nowrap;
         padding: 1px 3px;
         font-size: 9px;
+        width: 1%;
     }
-    /* Alinear los datos numéricos a la derecha */
-    .tabla-ajustada td:nth-child(n+3) {
-        text-align: right;
-    }
-    /* Alinear "Proyecto Dominante" (columna 3) a la derecha explícitamente */
+
+    /* Alinear texto de la columna "Proyecto Dominante" a la derecha */
     .tabla-ajustada td:nth-child(3) {
         text-align: left !important;
-    }
-    /* Alinear "Número de Bitácoras" (columna 2) a la izquierda */
-    .tabla-ajustada td:nth-child(2) {
-        text-align: right;
     }
 </style>
 """, unsafe_allow_html=True)

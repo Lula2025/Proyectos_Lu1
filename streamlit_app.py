@@ -202,6 +202,8 @@ with col7:
             title="🌄 Número de Parcelas por Año",
             labels={"Id_Parcela(Unico)": "Parcelas"}
         )
+        # Forzar colores usando update_traces para asegurar la correcta aplicación del color
+        fig_parcelas.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno
         st.plotly_chart(fig_parcelas, use_container_width=True)
 
 with col8:
@@ -216,6 +218,8 @@ with col8:
             title="👩‍🌾👨‍🌾 Número de Productores por Año",
             labels={"Id_Productor": "Productores"}
         )
+        # Forzar colores usando update_traces para asegurar la correcta aplicación del color
+        fig_productores.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno
         st.plotly_chart(fig_productores, use_container_width=True)
 
 # --- Gráfico de distribución por género ---

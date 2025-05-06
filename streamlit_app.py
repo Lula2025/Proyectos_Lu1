@@ -306,7 +306,7 @@ total_anual = conteo_mix.groupby("Anio")["Registros"].sum().reset_index(name="To
 
 # Calcular porcentaje del total por año
 conteo_mix = conteo_mix.merge(total_anual, on="Anio")
-conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(2)
+conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(1)
 
 # Obtener el proyecto dominante por año
 proyecto_max = (
@@ -334,7 +334,7 @@ tabla_final = conteo_pivot.copy()
 tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
 
 # Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría, por Año")
+st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución (%)  por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 
@@ -350,7 +350,7 @@ tabla_pct = conteo.pivot_table(
 )
 
 # Redondear a 2 decimales SIN agregar "%"
-tabla_pct = tabla_pct.round(2)
+tabla_pct = tabla_pct.round(1)
 
 # Resetear índice para que 'Anio' sea una columna normal
 tabla_pct = tabla_pct.reset_index()

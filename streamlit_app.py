@@ -326,14 +326,13 @@ conteo_pivot = conteo_mix.pivot_table(
 conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
 conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Convertir todos los valores a texto sin símbolo %
+# Convertir todos los valores a texto sin símbolo % (solo valores numéricos)
 tabla_final = conteo_pivot.copy()
 tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
 
 # Mostrar tabla final sin % en ningún valor
 st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
-
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---

@@ -179,7 +179,7 @@ with col6:
         y="Area_total_de_la_parcela(ha)",
         color="Tipo_parcela" if seleccion_tipos_parcela else None,
         color_discrete_map=color_map_parcela if seleccion_tipos_parcela else None,
-        title="🌿 Área Total de Parcelas por  ",
+        title="🌿 Área Total de Parcelas por Año ",
         labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
     )
     # Forzar colores usando update_traces para asegurar la correcta aplicación del color

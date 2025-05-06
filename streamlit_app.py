@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import unicodedata
 import zipfile
 
 # --- Configuración inicial de la página ---
@@ -64,6 +65,23 @@ color_map_parcela = {
     "Área de extensión": "#2ca02c",  # Verde
     "Módulo": "#d62728" ,           # Rojo
 }
+
+# --- Asegurar que Tipo_parcela tenga categorías predefinidas para colores fijos ---
+tipo_parcela_categorias = list(color_map_parcela.keys())
+datos["Tipo_parcela"] = pd.Categorical(datos["Tipo_parcela"], categories=tipo_parcela_categorias, ordered=True)
+
+# El resto del código usará datos_filtrados = datos.copy() con la misma lógica
+# y luego:
+datos_filtrados = datos.copy()
+datos_filtrados["Tipo_parcela"] = pd.Categorical(datos_filtrados["Tipo_parcela"], categories=tipo_parcela_categorias, ordered=True)
+
+# Continua el resto del dashboard sin cambios en la lógica general de los gráficos,
+# ya que el orden y colores fijos ya están garantizados en la categoría del DataFrame
+
+# Puedes continuar a partir de aquí con tus filtros, gráficos y tablas
+# sin modificar cada uno individualmente para asegurar colores.
+
+
 
 # --- Sidebar de filtros encadenados ---
 st.sidebar.header(" 🔽 Filtros")

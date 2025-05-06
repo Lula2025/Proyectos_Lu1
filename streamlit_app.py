@@ -365,21 +365,24 @@ html_table = tabla_tooltip.reset_index().to_html(
 # Estilo para alinear números
 st.markdown("""
 <style>
-    table {
+    .tabla-ajustada {
         font-family: sans-serif;
-        font-size: 10px;
+        font-size: 13px;  /* Reducido */
         border-collapse: collapse;
         width: auto;
     }
-    th {
+    .tabla-ajustada th {
+        max-width: 120px;
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
+        padding: 2px 6px;
     }
-    td {
+    .tabla-ajustada td {
         text-align: right;
         white-space: nowrap;
-        padding: 4px 7px;
+        padding: 2px 4px;  /* Más compacto aún */
+        font-size: 12px;   /* Más pequeño */
     }
 </style>
 """, unsafe_allow_html=True)

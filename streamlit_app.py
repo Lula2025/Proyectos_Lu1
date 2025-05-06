@@ -335,27 +335,34 @@ tabla_final = tabla_final.applymap(lambda x: f"{x:.1f}" if isinstance(x, (int, f
 
 
 
-# Función para aplicar tooltip a los encabezados
-def aplicar_tooltip_headers(df):
-    df = df.copy()
-    df.columns = [
-        f'<span title="{col}">{str(col)[:12]}…</span>' if len(str(col)) > 12 else str(col)
-        for col in df.columns
-    ]
-    return df
+# Crear copia de la tabla con columnas modificadas
+tabla_tooltip = tabla_final.copy()
 
-# Aplicar tooltip a encabezados
-tabla_con_tooltips = aplicar_tooltip_headers(tabla_final.reset_index())
+# Modificar solo las columnas MultiIndex (Categoria, Proyecto)
+nuevas_columnas = []
+for col in tabla_tooltip.columns:
+    if isinstance(col, tuple) and len(col) == 2:
+        categoria, proyecto = col
+        # Abreviar proyecto a 10 caracteres + tooltip
+        if len(str(proyecto)) > 10:
+            proyecto_html = f'<span title="{proyecto}">{proyecto[:10]}…</span>'
+        else:
+            proyecto_html = f'<span title="{proyecto}">{proyecto}</span>'
+        nuevas_columnas.append((categoria, proyecto_html))
+    else:
+        nuevas_columnas.append(col)
 
-# Convertir a HTML sin modificar los encabezados, pero ajustando celdas numéricas
-html_table = tabla_final.reset_index().to_html(
+tabla_tooltip.columns = pd.MultiIndex.from_tuples(nuevas_columnas) if isinstance(tabla_tooltip.columns, pd.MultiIndex) else nuevas_columnas
+
+# Convertir a HTML sin escapar tooltips
+html_table = tabla_tooltip.reset_index().to_html(
     escape=False,
     index=False,
     float_format="%.1f",
     border=0
 )
 
-# Estilo para ajustar ancho solo de celdas numéricas, dejando encabezados intactos
+# Estilo para alinear números
 st.markdown("""
 <style>
     table {
@@ -365,18 +372,19 @@ st.markdown("""
         width: auto;
     }
     th {
-        white-space: normal;
-        padding: 6px 12px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
     td {
         text-align: right;
         white-space: nowrap;
-        padding: 2px 6px;
+        padding: 4px 8px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Mostrar tabla final
+# Mostrar tabla con encabezados completos y proyectos abreviados con tooltip
 st.markdown("### 📋 Tabla: Numero de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
 st.markdown(html_table, unsafe_allow_html=True)
 

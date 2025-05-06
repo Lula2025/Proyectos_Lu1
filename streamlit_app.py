@@ -308,13 +308,13 @@ total_anual = conteo_mix.groupby("Anio")["Registros"].sum().reset_index(name="To
 conteo_mix = conteo_mix.merge(total_anual, on="Anio")
 conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(2)
 
-# Proyecto dominante por año
+# Obtener el proyecto dominante por año
 proyecto_max = (
     conteo_mix.loc[conteo_mix.groupby("Anio")["Porcentaje"].idxmax()]
     .set_index("Anio")["Proyecto"]
 )
 
-# Tabla pivot
+# Crear tabla con MultiIndex (Categoria -> Proyecto) como columnas
 conteo_pivot = conteo_mix.pivot_table(
     index="Anio",
     columns=["Categoria_Proyecto", "Proyecto"],
@@ -322,29 +322,17 @@ conteo_pivot = conteo_mix.pivot_table(
     fill_value=0
 )
 
-# Agregar columnas adicionales
+# Agregar columnas de total y proyecto dominante
 conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
 conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Copiar antes de formatear
+# Convertir todos los valores a texto sin símbolo %
 tabla_final = conteo_pivot.copy()
+tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
 
-# Formatear valores: agregar "%" a todo excepto las columnas de bitácoras y proyecto dominante
-for col in tabla_final.columns:
-    if col not in ["🔢 Numero de Bitacoras ", "🏆 Proyecto Dominante"]:
-        tabla_final[col] = tabla_final[col].apply(
-            lambda x: f"{x:.2f} %" if isinstance(x, (int, float)) and pd.notnull(x) else ""
-        )
-    elif col == "🔢 Numero de Bitacoras ":
-        tabla_final[col] = tabla_final[col].apply(
-            lambda x: f"{int(x)}" if isinstance(x, (int, float)) and pd.notnull(x) else ""
-        )
-
-# Mostrar
-st.markdown("### 📋 Tabla: Número de Bitácoras y Distribución porcentual (%) por Proyecto y Categoría, por Año")
+# Mostrar tabla final sin % en ningún valor
+st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
-
-
 
 
 
@@ -367,3 +355,4 @@ tabla_pct = tabla_pct.reset_index()
 
 # Mostrar tabla sin scroll horizontal (adaptada al contenido)
 st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
+

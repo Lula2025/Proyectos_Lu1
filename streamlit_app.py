@@ -333,9 +333,58 @@ conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
 tabla_final = conteo_pivot.copy()
 tabla_final = tabla_final.applymap(lambda x: f"{x:.1f}" if isinstance(x, (int, float)) else x)
 
-# Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla: Numero de Bitácoras y Distribución (%)  por Proyecto y Categoría, por Año")
-st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
+
+
+# Función para aplicar tooltip a los encabezados
+def aplicar_tooltip_headers(df):
+    df = df.copy()
+    df.columns = [
+        f'<span title="{col}">{str(col)[:12]}…</span>' if len(str(col)) > 12 else str(col)
+        for col in df.columns
+    ]
+    return df
+
+# Aplicar tooltip a encabezados
+tabla_con_tooltips = aplicar_tooltip_headers(tabla_final.reset_index())
+
+# Convertir la tabla a HTML
+html_table = tabla_con_tooltips.to_html(
+    index=False,
+    escape=False,  # Para permitir HTML en encabezados
+    float_format="%.1f",
+    border=0,
+    classes="tabla-ajustada"
+)
+
+# Estilos para ajustar al contenido numérico
+st.markdown("""
+<style>
+    .tabla-ajustada {
+        font-family: sans-serif;
+        font-size: 14px;
+        border-collapse: collapse;
+        width: auto;
+    }
+    .tabla-ajustada th {
+        max-width: 100px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+    .tabla-ajustada td {
+        text-align: right;
+        padding: 4px 8px;
+        white-space: nowrap;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Mostrar título y tabla con tooltips
+st.markdown("### 📋 Tabla: Numero de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
+st.markdown(html_table, unsafe_allow_html=True)
+
+
+
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---

@@ -329,12 +329,16 @@ conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 # Copiar antes de formatear
 tabla_final = conteo_pivot.copy()
 
-# Formatear SOLO columnas porcentuales
+# Formatear valores: agregar "%" a todo excepto las columnas de bitácoras y proyecto dominante
 for col in tabla_final.columns:
     if col not in ["🔢 Numero de Bitacoras ", "🏆 Proyecto Dominante"]:
-        tabla_final[col] = tabla_final[col].apply(lambda x: f"{x:.2f} %" if pd.notnull(x) else "")
+        tabla_final[col] = tabla_final[col].apply(
+            lambda x: f"{x:.2f} %" if isinstance(x, (int, float)) and pd.notnull(x) else ""
+        )
     elif col == "🔢 Numero de Bitacoras ":
-        tabla_final[col] = tabla_final[col].apply(lambda x: f"{int(x)}" if pd.notnull(x) else "")
+        tabla_final[col] = tabla_final[col].apply(
+            lambda x: f"{int(x)}" if isinstance(x, (int, float)) and pd.notnull(x) else ""
+        )
 
 # Mostrar
 st.markdown("### 📋 Tabla: Número de Bitácoras y Distribución porcentual (%) por Proyecto y Categoría, por Año")

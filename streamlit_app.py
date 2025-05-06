@@ -322,9 +322,12 @@ conteo_pivot = conteo_mix.pivot_table(
     fill_value=0
 )
 
-# Agregar columnas de total y proyecto dominante
+# Insertar "Numero de Bitacoras" al inicio
 conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
-conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
+
+# Insertar "Proyecto Dominante" justo después (posición 1)
+conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
+
 
 # Convertir todos los valores a texto sin símbolo % (solo valores numéricos)
 tabla_final = conteo_pivot.copy()

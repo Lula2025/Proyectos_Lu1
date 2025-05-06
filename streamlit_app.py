@@ -308,13 +308,13 @@ total_anual = conteo_mix.groupby("Anio")["Registros"].sum().reset_index(name="To
 conteo_mix = conteo_mix.merge(total_anual, on="Anio")
 conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(2)
 
-# Obtener el proyecto dominante por año
+# Proyecto dominante por año
 proyecto_max = (
     conteo_mix.loc[conteo_mix.groupby("Anio")["Porcentaje"].idxmax()]
     .set_index("Anio")["Proyecto"]
 )
 
-# Crear tabla con MultiIndex (Categoria -> Proyecto) como columnas
+# Tabla pivot
 conteo_pivot = conteo_mix.pivot_table(
     index="Anio",
     columns=["Categoria_Proyecto", "Proyecto"],
@@ -322,21 +322,21 @@ conteo_pivot = conteo_mix.pivot_table(
     fill_value=0
 )
 
-# Agregar columnas de total y proyecto dominante
+# Agregar columnas adicionales
 conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
 conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Guardar como tabla final para aplicar formateo
+# Copiar antes de formatear
 tabla_final = conteo_pivot.copy()
 
-# Formatear: aplicar "%" solo a columnas que son de tipo float y no sean las dos columnas especiales
+# Formatear SOLO columnas porcentuales
 for col in tabla_final.columns:
-    if col not in ["🔢 Numero de Bitacoras ", "🏆 Proyecto Dominante"] and tabla_final[col].dtype in [float, int]:
+    if col not in ["🔢 Numero de Bitacoras ", "🏆 Proyecto Dominante"]:
         tabla_final[col] = tabla_final[col].apply(lambda x: f"{x:.2f} %" if pd.notnull(x) else "")
     elif col == "🔢 Numero de Bitacoras ":
         tabla_final[col] = tabla_final[col].apply(lambda x: f"{int(x)}" if pd.notnull(x) else "")
 
-# Mostrar tabla final
+# Mostrar
 st.markdown("### 📋 Tabla: Número de Bitácoras y Distribución porcentual (%) por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 

@@ -258,8 +258,8 @@ if "Genero" in datos_filtrados.columns:
 
 st.markdown("---")  # Esta es la línea de separación
 
-# --- Gráfica: Distribución porcentual por Categoría del Proyecto cada año ---
-st.markdown("### 📈 Distribución (%)  por Categoría del Proyecto, por Año")
+# --- Gráfica: Distribución porcentual  del Numero de Bitácoras por Categoría del Proyecto cada año ---
+st.markdown("### 📈 Distribución (%) del Numero de Bitácoras por Categoría del Proyecto, por Año")
 
 # Conteo por año y categoría
 conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")

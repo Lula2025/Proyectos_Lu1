@@ -52,6 +52,7 @@ columnas_categoricas = ["Categoria_Proyecto", "Ciclo", "Estado", "Tipo_Regimen_H
 for col in columnas_categoricas:
     datos[col] = datos[col].astype(str)
 
+# Conversión de tipos numéricos y filtrado de años
 datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
 datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
     datos["Area_total_de_la_parcela(ha)"], errors="coerce"
@@ -63,28 +64,37 @@ datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 color_map_parcela = {
     "Área de impacto": "#1f77b4",   # Azul
     "Área de extensión": "#2ca02c",  # Verde
-    "Módulo": "#d62728" ,           # Rojo
+    "Módulo": "#d62728"             # Rojo
 }
 
 # --- Crear mapa de colores fijo para Categoria_Proyecto ---
 color_map_categoria_proyecto = {
-    "MasAgro Federal": "#FFA500",           # Naranja
-    "Vinculacion MasAgro": "#90EE90",      # Verde claro
-    "sector privado": "#A9A9A9",            # Gris
+    "MasAgro Federal": "#FFA500",        # Naranja
+    "Vinculacion MasAgro": "#90EE90",   # Verde claro
+    "sector privado": "#A9A9A9"          # Gris
 }
 
-# --- Asegurar que Tipo_parcela tenga categorías predefinidas para colores fijos ---
+# --- Configurar categorías como Categorical con orden ---
 tipo_parcela_categorias = list(color_map_parcela.keys())
 datos["Tipo_parcela"] = pd.Categorical(datos["Tipo_parcela"], categories=tipo_parcela_categorias, ordered=True)
 
-# --- Asegurar que Categoria_Proyecto tenga categorías predefinidas para colores fijos ---
 categoria_proyecto_categorias = list(color_map_categoria_proyecto.keys())
 datos["Categoria_Proyecto"] = pd.Categorical(datos["Categoria_Proyecto"], categories=categoria_proyecto_categorias, ordered=True)
 
-# El resto del código usará datos_filtrados = datos.copy() con la misma lógica
+# Crear copia para visualizaciones filtradas
 datos_filtrados = datos.copy()
 datos_filtrados["Tipo_parcela"] = pd.Categorical(datos_filtrados["Tipo_parcela"], categories=tipo_parcela_categorias, ordered=True)
 datos_filtrados["Categoria_Proyecto"] = pd.Categorical(datos_filtrados["Categoria_Proyecto"], categories=categoria_proyecto_categorias, ordered=True)
+
+# --- Agregar columna auxiliar para asignar colores manuales ---
+datos_filtrados["Color_Tipo_parcela"] = datos_filtrados["Tipo_parcela"].map(color_map_parcela)
+datos_filtrados["Color_Categoria_Proyecto"] = datos_filtrados["Categoria_Proyecto"].map(color_map_categoria_proyecto)
+
+# Nota: el mapa de colores 'color_map_categoria_proyecto' debe usarse manualmente en los gráficos correspondientes,
+# excepto en la gráfica de Distribución Total por Género.
+
+# Puedes continuar a partir de aquí con tus filtros, gráficos y tablas
+# y aplicar los mapas de colores donde correspondan.
 
 
 

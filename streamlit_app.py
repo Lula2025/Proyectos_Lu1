@@ -382,23 +382,22 @@ st.markdown("""
         padding: 1px 4px;
         vertical-align: bottom;
         font-size: 9px;
-        text-align: center;
     }
     .tabla-ajustada td {
         white-space: nowrap;
         padding: 1px 3px;
         font-size: 9px;
     }
-    /* Numero de Bitácoras (columna 2) a la derecha */
-    .tabla-ajustada td:nth-child(2) {
+    /* Alinear los datos numéricos a la derecha */
+    .tabla-ajustada td:nth-child(n+3) {
         text-align: right;
     }
-    /* Proyecto Dominante (columna 3) a la izquierda */
+    /* Alinear "Proyecto Dominante" (columna 3) a la derecha explícitamente */
     .tabla-ajustada td:nth-child(3) {
-        text-align: left;
+        text-align: left !important;
     }
-    /* Alinear los valores numéricos de proyectos a la derecha (desde la 4ta columna en adelante) */
-    .tabla-ajustada td:nth-child(n+4) {
+    /* Alinear "Número de Bitácoras" (columna 2) a la izquierda */
+    .tabla-ajustada td:nth-child(2) {
         text-align: right;
     }
 </style>

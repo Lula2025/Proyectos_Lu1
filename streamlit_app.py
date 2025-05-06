@@ -344,7 +344,7 @@ for col in tabla_tooltip.columns:
     if isinstance(col, tuple) and len(col) == 2:
         categoria, proyecto = col
         # Abreviar proyecto a 10 caracteres + tooltip
-        if len(str(proyecto)) > 10:
+        if len(str(proyecto)) > 6:
             proyecto_html = f'<span title="{proyecto}">{proyecto[:10]}…</span>'
         else:
             proyecto_html = f'<span title="{proyecto}">{proyecto}</span>'
@@ -367,7 +367,7 @@ st.markdown("""
 <style>
     .tabla-ajustada {
         font-family: sans-serif;
-        font-size: 13px;
+        font-size: 9px;
         border-collapse: collapse;
         width: auto;
     }
@@ -382,7 +382,7 @@ st.markdown("""
         text-align: right;
         white-space: nowrap;
         padding: 2px 4px;
-        font-size: 12px;
+        font-size: 9px;
         width: 1%;  /* Fuerza a ajustarse al contenido más corto posible */
     }
 </style>

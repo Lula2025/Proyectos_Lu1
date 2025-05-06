@@ -367,22 +367,23 @@ st.markdown("""
 <style>
     .tabla-ajustada {
         font-family: sans-serif;
-        font-size: 13px;  /* Reducido */
+        font-size: 13px;
         border-collapse: collapse;
         width: auto;
     }
     .tabla-ajustada th {
-        max-width: 120px;
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
         padding: 2px 6px;
+        vertical-align: bottom;
     }
     .tabla-ajustada td {
         text-align: right;
         white-space: nowrap;
-        padding: 2px 4px;  /* Más compacto aún */
-        font-size: 12px;   /* Más pequeño */
+        padding: 2px 4px;
+        font-size: 12px;
+        width: 1%;  /* Fuerza a ajustarse al contenido más corto posible */
     }
 </style>
 """, unsafe_allow_html=True)

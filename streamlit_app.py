@@ -66,20 +66,26 @@ color_map_parcela = {
     "Módulo": "#d62728" ,           # Rojo
 }
 
+# --- Crear mapa de colores fijo para Categoria_Proyecto ---
+color_map_categoria_proyecto = {
+    "MasAgro Federal": "#FFA500",           # Naranja
+    "Vinculacion MasAgro": "#90EE90",      # Verde claro
+    "sector privado": "#A9A9A9",            # Gris
+}
+
 # --- Asegurar que Tipo_parcela tenga categorías predefinidas para colores fijos ---
 tipo_parcela_categorias = list(color_map_parcela.keys())
 datos["Tipo_parcela"] = pd.Categorical(datos["Tipo_parcela"], categories=tipo_parcela_categorias, ordered=True)
 
+# --- Asegurar que Categoria_Proyecto tenga categorías predefinidas para colores fijos ---
+categoria_proyecto_categorias = list(color_map_categoria_proyecto.keys())
+datos["Categoria_Proyecto"] = pd.Categorical(datos["Categoria_Proyecto"], categories=categoria_proyecto_categorias, ordered=True)
+
 # El resto del código usará datos_filtrados = datos.copy() con la misma lógica
-# y luego:
 datos_filtrados = datos.copy()
 datos_filtrados["Tipo_parcela"] = pd.Categorical(datos_filtrados["Tipo_parcela"], categories=tipo_parcela_categorias, ordered=True)
+datos_filtrados["Categoria_Proyecto"] = pd.Categorical(datos_filtrados["Categoria_Proyecto"], categories=categoria_proyecto_categorias, ordered=True)
 
-# Continua el resto del dashboard sin cambios en la lógica general de los gráficos,
-# ya que el orden y colores fijos ya están garantizados en la categoría del DataFrame
-
-# Puedes continuar a partir de aquí con tus filtros, gráficos y tablas
-# sin modificar cada uno individualmente para asegurar colores.
 
 
 

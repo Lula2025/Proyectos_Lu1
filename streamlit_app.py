@@ -335,64 +335,59 @@ tabla_final = tabla_final.applymap(lambda x: f"{x:.1f}" if isinstance(x, (int, f
 
 
 
-# Crear copia de la tabla con columnas modificadas
+# --- Crear copia de la tabla con columnas modificadas ---
 tabla_tooltip = tabla_final.copy()
 
-# Modificar solo las columnas MultiIndex (Categoria, Proyecto)
+# Si tiene columnas MultiIndex (Categoria, Proyecto), aplicar tooltip SOLO a Proyecto
 nuevas_columnas = []
-for col in tabla_tooltip.columns:
-    if isinstance(col, tuple) and len(col) == 2:
-        categoria, proyecto = col
-        # Abreviar proyecto a 10 caracteres + tooltip
-        if len(str(proyecto)) > 6:
-            proyecto_html = f'<span title="{proyecto}">{proyecto[:10]}…</span>'
+if isinstance(tabla_tooltip.columns, pd.MultiIndex):
+    for categoria, proyecto in tabla_tooltip.columns:
+        proyecto_str = str(proyecto)
+        if len(proyecto_str) > 10:
+            proyecto_html = f'<span title="{proyecto_str}">{proyecto_str[:10]}…</span>'
         else:
-            proyecto_html = f'<span title="{proyecto}">{proyecto}</span>'
+            proyecto_html = f'<span title="{proyecto_str}">{proyecto_str}</span>'
         nuevas_columnas.append((categoria, proyecto_html))
-    else:
-        nuevas_columnas.append(col)
+    tabla_tooltip.columns = pd.MultiIndex.from_tuples(nuevas_columnas)
 
-tabla_tooltip.columns = pd.MultiIndex.from_tuples(nuevas_columnas) if isinstance(tabla_tooltip.columns, pd.MultiIndex) else nuevas_columnas
-
-# Convertir a HTML sin escapar tooltips
+# Convertir la tabla a HTML sin escapar los tooltips
 html_table = tabla_tooltip.reset_index().to_html(
     escape=False,
     index=False,
     float_format="%.1f",
-    border=0
+    border=0,
+    classes="tabla-ajustada"
 )
 
-# Estilo para alinear números
+# Estilos CSS para compactar la tabla y ajustar al contenido numérico
 st.markdown("""
 <style>
     .tabla-ajustada {
         font-family: sans-serif;
-        font-size: 11px;  /* Tamaño de letra reducido */
+        font-size: 11px;
         border-collapse: collapse;
         width: auto;
     }
     .tabla-ajustada th {
         white-space: nowrap;
-        text-overflow: ellipsis;
         overflow: hidden;
-        padding: 1px 4px;  /* Menos espacio */
-        vertical-align: bottom;
+        padding: 2px 4px;
         font-size: 9px;
+        vertical-align: bottom;
     }
     .tabla-ajustada td {
         text-align: right;
         white-space: nowrap;
-        padding: 1px 3px;  /* Menos espacio */
-        font-size: 9px;   /* Letra aún más pequeña para celdas */
+        padding: 1px 3px;
+        font-size: 9px;
         width: 1%;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Mostrar tabla con encabezados completos y proyectos abreviados con tooltip
-st.markdown("### 📋 Numero de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
+# Mostrar el título y la tabla con tooltips
+st.markdown("### 📋 Número de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
 st.markdown(html_table, unsafe_allow_html=True)
-
 
 
 

@@ -354,7 +354,7 @@ if isinstance(tabla_tooltip.columns, pd.MultiIndex):
 html_table = tabla_tooltip.reset_index().to_html(
     escape=False,
     index=False,
-    float_format="%.1f",
+    float_format="%.2f",
     border=0,
     classes="tabla-ajustada"
 )

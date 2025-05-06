@@ -347,39 +347,36 @@ def aplicar_tooltip_headers(df):
 # Aplicar tooltip a encabezados
 tabla_con_tooltips = aplicar_tooltip_headers(tabla_final.reset_index())
 
-# Convertir la tabla a HTML
-html_table = tabla_con_tooltips.to_html(
+# Convertir a HTML sin modificar los encabezados, pero ajustando celdas numéricas
+html_table = tabla_final.reset_index().to_html(
+    escape=False,
     index=False,
-    escape=False,  # Para permitir HTML en encabezados
     float_format="%.1f",
-    border=0,
-    classes="tabla-ajustada"
+    border=0
 )
 
-# Estilos para ajustar al contenido numérico
+# Estilo para ajustar ancho solo de celdas numéricas, dejando encabezados intactos
 st.markdown("""
 <style>
-    .tabla-ajustada {
+    table {
         font-family: sans-serif;
         font-size: 14px;
         border-collapse: collapse;
         width: auto;
     }
-    .tabla-ajustada th {
-        max-width: 100px;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
+    th {
+        white-space: normal;
+        padding: 6px 12px;
     }
-    .tabla-ajustada td {
+    td {
         text-align: right;
-        padding: 4px 8px;
         white-space: nowrap;
+        padding: 2px 6px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Mostrar título y tabla con tooltips
+# Mostrar tabla final
 st.markdown("### 📋 Tabla: Numero de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
 st.markdown(html_table, unsafe_allow_html=True)
 

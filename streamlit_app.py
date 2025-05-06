@@ -331,7 +331,14 @@ conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
 
 # Convertir todos los valores a texto sin símbolo % (solo valores numéricos)
 tabla_final = conteo_pivot.copy()
-tabla_final = tabla_final.applymap(lambda x: f"{x:.1f}" if isinstance(x, (int, float)) else x)
+
+for col in tabla_final.columns:
+    if col == "🔢 Numero de Bitacoras ":
+        # Mantener como entero
+        tabla_final[col] = tabla_final[col].apply(lambda x: int(x) if pd.notnull(x) else x)
+    elif tabla_final[col].dtype in [float, int]:
+        # Redondear a dos decimales
+        tabla_final[col] = tabla_final[col].apply(lambda x: round(x, 2) if pd.notnull(x) else x)
 
 
 

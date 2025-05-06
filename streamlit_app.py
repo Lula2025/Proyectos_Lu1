@@ -326,16 +326,22 @@ conteo_pivot = conteo_mix.pivot_table(
 conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
 conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Formatear valores: agregar "%" a todo excepto las columnas de bitácoras y proyecto dominante
+# Guardar como tabla final para aplicar formateo
+tabla_final = conteo_pivot.copy()
+
+# Formatear valores: agregar "%" excepto en columnas de bitácoras y proyecto dominante
 for col in tabla_final.columns:
     if col not in ["🔢 Numero de Bitacoras ", "🏆 Proyecto Dominante"]:
-        tabla_final[col] = tabla_final[col].apply(lambda x: f"{x:.2f} %" if isinstance(x, (int, float)) else x)
+        tabla_final[col] = tabla_final[col].apply(
+            lambda x: f"{x:.2f} %" if isinstance(x, (int, float)) else x
+        )
     else:
-        tabla_final[col] = tabla_final[col].apply(lambda x: f"{int(x)}" if isinstance(x, (int, float)) else x)
+        tabla_final[col] = tabla_final[col].apply(
+            lambda x: f"{int(x)}" if isinstance(x, (int, float)) else x
+        )
 
-
-# Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría, por Año")
+# Mostrar tabla final
+st.markdown("### 📋 Tabla: Número de Bitácoras y Distribución porcentual (%) por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 

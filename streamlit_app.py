@@ -389,7 +389,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Mostrar tabla con encabezados completos y proyectos abreviados con tooltip
-st.markdown("### 📋 Tabla: Numero de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
+st.markdown("### 📋 Numero de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
 st.markdown(html_table, unsafe_allow_html=True)
 
 
@@ -397,7 +397,7 @@ st.markdown(html_table, unsafe_allow_html=True)
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---
-st.markdown("### 📋 Tabla de Distribución (%) por Categoría del Proyecto, por Año")
+st.markdown("### 📋 Distribución (%) por Categoría del Proyecto, por Año")
 
 # Pivotear para mostrar cada categoría como columna
 tabla_pct = conteo.pivot_table(

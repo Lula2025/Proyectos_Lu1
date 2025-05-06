@@ -259,7 +259,7 @@ if "Genero" in datos_filtrados.columns:
 st.markdown("---")  # Esta es la línea de separación
 
 # --- Gráfica: Distribución porcentual por Categoría del Proyecto cada año ---
-st.markdown("### 📈 Distribución (%)  respecto al Numero de Bitácoras por Proyecto y Categoría del Proyecto, por Año")
+st.markdown("### 📈 Distribución (%)  por Categoría del Proyecto, por Año")
 
 # Conteo por año y categoría
 conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
@@ -334,7 +334,7 @@ tabla_final = conteo_pivot.copy()
 tabla_final = tabla_final.applymap(lambda x: f"{x:.1f}" if isinstance(x, (int, float)) else x)
 
 # Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución (%)  por Proyecto y Categoría, por Año")
+st.markdown("### 📋 Tabla: Numero de Bitácoras y Distribución (%)  por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 

@@ -331,7 +331,7 @@ conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
 
 # Convertir todos los valores a texto sin símbolo % (solo valores numéricos)
 tabla_final = conteo_pivot.copy()
-tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
+tabla_final = tabla_final.applymap(lambda x: f"{x:.1f}" if isinstance(x, (int, float)) else x)
 
 # Mostrar tabla final sin % en ningún valor
 st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución (%)  por Proyecto y Categoría, por Año")

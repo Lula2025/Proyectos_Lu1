@@ -367,7 +367,7 @@ st.markdown("""
 <style>
     table {
         font-family: sans-serif;
-        font-size: 14px;
+        font-size: 10px;
         border-collapse: collapse;
         width: auto;
     }
@@ -379,7 +379,7 @@ st.markdown("""
     td {
         text-align: right;
         white-space: nowrap;
-        padding: 4px 8px;
+        padding: 4px 7px;
     }
 </style>
 """, unsafe_allow_html=True)

@@ -65,28 +65,25 @@ color_map_parcela = {
     "Módulo": "#d62728" ,           # Rojo
 }
 #########
-st.sidebar.header("🔽 Filtros")
+# --- Sidebar de filtros encadenados ---
+st.sidebar.header(" 🔽 Filtros")
 
-# Estado inicial para el botón "Seleccionar todas"
-if 'select_all' not in st.session_state:
-    st.session_state.select_all = True  # Comienza seleccionado
+if 'limpiar_filtros' not in st.session_state:
+    st.session_state.limpiar_filtros = False
 
-# Checkbox de "Seleccionar todas"
-select_all = st.sidebar.checkbox("✅ Seleccionar/Deseleccionar todos", value=st.session_state.select_all, key="select_all")
+select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
 
-# Función para generar filtros con estado sincronizado
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
     for o in opciones:
+        default_value = select_all if not st.session_state.limpiar_filtros else False
         key_name = f"{prefix}_{str(o)}"
-        if key_name not in st.session_state:
-            st.session_state[key_name] = select_all
-        # Si cambia el checkbox general, actualiza los individuales
-        if st.session_state.select_all != st.session_state[key_name]:
-            st.session_state[key_name] = select_all
-        if st.checkbox(str(o), value=st.session_state[key_name], key=key_name):
+        if st.checkbox(str(o), value=default_value, key=key_name):
             seleccionadas.append(o)
     return seleccionadas
+
+# Inicializar con todos los datos
+datos_filtrados = datos.copy()
 
 
 #######

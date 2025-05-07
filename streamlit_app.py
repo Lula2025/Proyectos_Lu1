@@ -252,7 +252,7 @@ if "Genero" in datos_filtrados.columns:
     )
 
     fig_genero.update_traces(
-        textinfo='value',
+        textinfo='percent',
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
 

@@ -315,7 +315,7 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         xaxis_title="Año",
         legend_title="Género",
         height=450,
-        width=700
+        width=500
     )
 
     # Posicionar los textos dentro de las barras

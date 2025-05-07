@@ -226,6 +226,40 @@ with col8:
         st.plotly_chart(fig_productores, use_container_width=True)
 
 
+# --- Gráfico de distribución por género ---
+if "Genero" in datos_filtrados.columns:
+    st.markdown("---")
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
+    categorias_genero = ["Masculino", "Femenino", "NA.."]
+    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
+    datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
+
+    total_registros = datos_genero["Registros"].sum()
+    datos_genero["Porcentaje"] = (datos_genero["Registros"] / total_registros * 100) if total_registros > 0 else 0
+
+    color_map_genero = {
+        "Masculino": "#2ca02c",
+        "Femenino": "#ff7f0e",
+        "NA..": "#F0F0F0"
+    }
+
+    fig_genero = px.pie(
+        datos_genero,
+        names="Genero",
+        values="Registros",
+        title="👩👨 Distribución Total de Productores(as) por Género",
+        color="Genero",
+        color_discrete_map=color_map_genero
+    )
+
+    fig_genero.update_traces(
+        textinfo='percent',
+        marker=dict(line=dict(color='#FFFFFF', width=2))
+    )
+
+    st.plotly_chart(fig_genero, use_container_width=True)
+
+
 # --- Gráfico de evolución de productores por género a lo largo de los años ---
 if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
     st.markdown("### 📈 Evolución de Productores(as) por Género en Porcentaje")

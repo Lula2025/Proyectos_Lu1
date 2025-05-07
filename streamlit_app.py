@@ -258,6 +258,7 @@ if "Genero" in datos_filtrados.columns:
     )
 
     st.plotly_chart(fig_genero, use_container_width=True)
+    
 
 # --- Gráfico de evolución de productores por género a lo largo de los años ---
 if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
@@ -271,58 +272,63 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         "NA": "NA.."
     })
 
-    # Agrupar por año y género
-    productores_genero_anio = datos_filtrados.groupby(["Anio", "Genero"])["Id_Productor"].nunique().reset_index()
+    # Asegurar valores consistentes
+datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
+datos_filtrados["Genero"] = datos_filtrados["Genero"].replace({
+    "Femenino": "Femenino",
+    "Masculino": "Masculino",
+    "NA": "NA.."
+})
 
-    # Crear gráfico de barras
-    fig_genero_anio = px.bar(
-        productores_genero_anio,
-        x="Anio",
-        y="Id_Productor",
-        color="Genero",
-        barmode="group",
-        color_discrete_map=color_map_genero,
-        title="👩👨 Número de Productores(as) por Género y Año",
-        labels={"Id_Productor": "Número de Productores(as)"}
-    )
+# Agrupar por año y género
+productores_genero_anio = datos_filtrados.groupby(["Anio", "Genero"])["Id_Productor"].nunique().reset_index(name="Cantidad")
 
- # Mostrar el gráfico en Streamlit
-    st.plotly_chart(fig_genero_anio, use_container_width=True)
-    
-st.markdown("---")  # Esta es la línea de separación
+# Calcular total de productores por año
+totales_anio = productores_genero_anio.groupby("Anio")["Cantidad"].sum().reset_index(name="Total")
+productores_genero_anio = productores_genero_anio.merge(totales_anio, on="Anio")
 
-# --- Gráfica: Distribución porcentual  del Numero de Bitácoras por Categoría del Proyecto cada año ---
-st.markdown("### 📈 Distribución (%) del Numero de Bitácoras por Categoría del Proyecto, por Año")
+# Calcular porcentaje por año
+productores_genero_anio["Porcentaje"] = (productores_genero_anio["Cantidad"] / productores_genero_anio["Total"] * 100).round(1)
 
-# Conteo por año y categoría
-conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
+# Asignar emojis a cada género
+emoji_genero = {
+    "Femenino": "👩 Mujeres",
+    "Masculino": "👨 Hombres",
+    "NA..": "❔ Sin dato"
+}
+productores_genero_anio["Genero_Emoji"] = productores_genero_anio["Genero"].map(emoji_genero)
 
-# Calcular el total por año
-totales_anio = conteo.groupby("Anio")["Registros"].transform("sum")
-
-# Calcular porcentaje que representa cada categoría
-conteo["Porcentaje"] = (conteo["Registros"] / totales_anio) * 100
-
-
-# Gráfico de áreas apiladas (líneas acumulativas en %) por categoría
-fig_distribucion = px.area(
-    conteo,
+# Crear gráfico de barras apiladas por porcentaje
+fig_genero_pct = px.bar(
+    productores_genero_anio,
     x="Anio",
     y="Porcentaje",
-    color="Categoria_Proyecto",
-    title=" ",
+    color="Genero_Emoji",
+    title="📊 Porcentaje de Productores(as) por Género y Año",
     labels={"Porcentaje": "% del total por año"},
-    groupnorm="percent"
+    color_discrete_map={
+        "👨 Hombres": "#2ca02c",
+        "👩 Mujeres": "#ff7f0e",
+        "❔ Sin dato": "#F0F0F0"
+    },
+    text=productores_genero_anio["Porcentaje"].astype(str) + "%"
 )
 
-fig_distribucion.update_layout(
-    yaxis_ticksuffix="%",
-    legend_title_text='Categoría',
-    template="plotly_white"
+# Configurar diseño
+fig_genero_pct.update_layout(
+    barmode="stack",
+    yaxis_tickformat=".1f",
+    yaxis_title="Porcentaje (%)",
+    xaxis_title="Año",
+    legend_title="Género",
+    height=400
 )
 
-st.plotly_chart(fig_distribucion, use_container_width=True)
+# Posición del texto dentro de las barras
+fig_genero_pct.update_traces(textposition="inside")
 
+# Mostrar el gráfico
+st.plotly_chart(fig_genero_pct, use_container_width=True)
 
 
 

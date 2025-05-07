@@ -301,7 +301,6 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         color_discrete_map={
             "👨 Hombres": "#2ca02c",
             "👩 Mujeres": "#ff7f0e",
-            "🌈 Enmongi": "#9467bd",
             "❔ Sin dato": "#F0F0F0"
         },
         text=productores_genero_anio["Porcentaje"].astype(str) + "%"

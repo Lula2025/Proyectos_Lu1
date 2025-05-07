@@ -286,7 +286,9 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         labels={"Id_Productor": "Número de Productores(as)"}
     )
 
-
+ # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig_genero_anio, use_container_width=True)
+    
 st.markdown("---")  # Esta es la línea de separación
 
 # --- Gráfica: Distribución porcentual  del Numero de Bitácoras por Categoría del Proyecto cada año ---

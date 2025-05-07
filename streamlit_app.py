@@ -386,3 +386,33 @@ st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(50
 
 
 
+
+# --- Tabla de porcentajes por año y categoría del proyecto ---
+st.markdown("### 📋 Distribución por Categoría del Proyecto, por Año")
+
+# Agrupar por año y categoría
+conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")
+
+# Calcular total por año
+conteo["Total_Anio"] = conteo.groupby("Anio")["Registros"].transform("sum")
+
+# Calcular porcentaje
+conteo["Porcentaje"] = (conteo["Registros"] / conteo["Total_Anio"] * 100)
+
+# Pivotear para mostrar cada categoría como columna
+tabla_pct = conteo.pivot_table(
+    index="Anio",
+    columns="Categoria_Proyecto",
+    values="Porcentaje",
+    fill_value=0
+)
+
+# Redondear a 2 decimales y convertir a string con % para presentación
+tabla_pct = tabla_pct.round(2).astype(str) + " %"
+
+# Resetear índice para que 'Anio' sea una columna normal
+tabla_pct = tabla_pct.reset_index()
+
+# Mostrar tabla sin scroll horizontal (adaptada al contenido)
+st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
+

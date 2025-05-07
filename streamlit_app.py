@@ -381,14 +381,14 @@ tabla_tooltip = tabla_final.copy()
 
 
 # Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Número de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
+st.markdown("### 📋 Número de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(500, 40 * len(tabla_final)))
 
 
 
 
 # --- Tabla de porcentajes por año y categoría del proyecto ---
-st.markdown("### 📋 Distribución por Categoría del Proyecto, por Año")
+st.markdown("### 📋 Distribución(%) por Categoría del Proyecto, por Año")
 
 # Agrupar por año y categoría
 conteo = datos_filtrados.groupby(["Anio", "Categoria_Proyecto"]).size().reset_index(name="Registros")

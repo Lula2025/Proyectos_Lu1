@@ -263,7 +263,7 @@ if "Genero" in datos_filtrados.columns:
 
 # --- Gráfico de evolución de productores por género a lo largo de los años ---
 if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
-    st.markdown("### 📈 Evolución de Productores(as) por Género en Porcentaje")
+    st.markdown("###")
 
     # Normalizar valores de género
     datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
@@ -412,6 +412,9 @@ tabla_pct = tabla_pct.round(2)
 
 # Resetear índice para que 'Anio' sea una columna normal
 tabla_pct = tabla_pct.reset_index()
+
+# Encabezados compactos
+tabla_pct.columns = [f"{cat[:4]} ({tipo})" for tipo, cat in tabla_pct.columns]
 
 # Mostrar tabla sin scroll horizontal (adaptada al contenido)
 st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))

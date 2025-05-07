@@ -326,6 +326,8 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
 
 st.markdown("---")  # Línea de separación
 
+
+
 # --- Recuento por Año, Categoría y Proyecto ---
 conteo_mix = (
     datos_filtrados
@@ -375,20 +377,17 @@ for col in tabla_final.columns:
 
 
 
-# --- Crear copia de la tabla con columnas modificadas ---
-tabla_tooltip = tabla_final.copy()
-
 
 # Mostrar tabla final sin % en ningún valor
 st.markdown("### 📋 Número de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
-st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
+st.dataframe(tabla_final, use_container_width=True)
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---
 st.markdown("### 📋 Tabla de Distribución por Categoría del Proyecto, por Año")
 
 # Pivotear para mostrar cada categoría como columna
-tabla_pct = conteo.pivot_table(
+tabla_pct = conteo.pivot_table(use_container_width=True)
     index="Anio",
     columns="Categoria_Proyecto",
     values="Porcentaje",
@@ -403,4 +402,4 @@ tabla_pct = tabla_pct.reset_index()
 
 # Mostrar tabla sin scroll horizontal (adaptada al contenido)
 st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
-
+st.dataframe(tabla_final, use_container_width=True)

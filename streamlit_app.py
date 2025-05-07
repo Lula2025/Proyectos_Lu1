@@ -308,7 +308,7 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
     )
 
     # Configurar diseño del gráfico
-fig_genero_pct.update_layout(
+  fig_genero_pct.update_layout(
     barmode="stack",
     yaxis_tickformat=".1f",
     yaxis_title="Porcentaje (%)",
@@ -317,8 +317,7 @@ fig_genero_pct.update_layout(
     height=500,      # Ajuste de altura
     width=900,       # Ajuste de ancho
     bargap=0.2,      # Espaciado entre barras, puedes ajustarlo si es necesario
-    margin=dict(l=40, r=40, t=40, b=40),  # Márgenes alrededor del gráfico para que no se vea tan apretado
-)
+    )
 
     # Posicionar los textos dentro de las barras
     fig_genero_pct.update_traces(textposition="inside")

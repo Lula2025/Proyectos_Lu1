@@ -314,7 +314,9 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         yaxis_title="Porcentaje (%)",
         xaxis_title="Año",
         legend_title="Género",
-        height=400
+        height=600,
+        width=700,
+        margin=dict(l=40, r=40, t=40, b=40),
     )
 
     # Posicionar los textos dentro de las barras

@@ -76,6 +76,13 @@ select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=Fal
 # Limpiar filtros
 if st.sidebar.button("🧹 Limpiar filtros"):
     st.session_state.limpiar_filtros = True
+    # Limpia el estado de los filtros al resetearlos a su estado inicial.
+    st.session_state.categoria_seleccionada = "Todas"
+    st.session_state.proyectos_seleccionados = []
+    st.session_state.seleccion_ciclos = []
+    st.session_state.seleccion_tipos_parcela = []
+    st.session_state.seleccion_estados = []
+    st.session_state.seleccion_regimen = []
     st.experimental_rerun()
     
 

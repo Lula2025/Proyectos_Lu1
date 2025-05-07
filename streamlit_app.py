@@ -260,6 +260,68 @@ if "Genero" in datos_filtrados.columns:
     st.plotly_chart(fig_genero, use_container_width=True)
 
 
+# --- Gráfico de evolución de productores por género a lo largo de los años ---
+if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
+    st.markdown("### 📈 Evolución de Productores(as) por Género en Porcentaje")
+
+    # Normalizar valores de género
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].replace({
+        "Hombre": "Masculino",
+        "Mujer": "Femenino",
+        "NA": "NA.."
+    })
+
+    # Agrupar por año y género
+    productores_genero_anio = datos_filtrados.groupby(["Anio", "Genero"])["Id_Productor"].nunique().reset_index(name="Cantidad")
+
+    # Calcular total de productores por año
+    totales_anio = productores_genero_anio.groupby("Anio")["Cantidad"].sum().reset_index(name="Total")
+    productores_genero_anio = productores_genero_anio.merge(totales_anio, on="Anio")
+
+    # Calcular porcentaje por año
+    productores_genero_anio["Porcentaje"] = (productores_genero_anio["Cantidad"] / productores_genero_anio["Total"] * 100).round(1)
+
+    # Asignar emojis a cada género
+    emoji_genero = {
+        "Femenino": "👩 Mujeres",
+        "Masculino": "👨 Hombres",
+        "NA..": "❔ Sin dato"
+    }
+    productores_genero_anio["Genero_Emoji"] = productores_genero_anio["Genero"].map(emoji_genero)
+
+    # Crear gráfico de barras apiladas por porcentaje
+    fig_genero_pct = px.bar(
+        productores_genero_anio,
+        x="Anio",
+        y="Porcentaje",
+        color="Genero_Emoji",
+        title="📊 Porcentaje de Productores(as) por Género y Año",
+        labels={"Porcentaje": "% del total por año"},
+        color_discrete_map={
+            "👨 Hombres": "#2ca02c",
+            "👩 Mujeres": "#ff7f0e",
+            "❔ Sin dato": "#F0F0F0"
+        },
+        text=productores_genero_anio["Porcentaje"].astype(str) + "%"
+    )
+
+    # Configurar diseño del gráfico
+    fig_genero_pct.update_layout(
+        barmode="stack",
+        yaxis_tickformat=".1f",
+        yaxis_title="Porcentaje (%)",
+        xaxis_title="Año",
+        legend_title="Género",
+        height=400
+    )
+
+    # Posicionar los textos dentro de las barras
+    fig_genero_pct.update_traces(textposition="inside")
+
+    # Mostrar el gráfico
+    st.plotly_chart(fig_genero_pct, use_container_width=True)
+
 
 
 st.markdown("---")  # Línea de separación

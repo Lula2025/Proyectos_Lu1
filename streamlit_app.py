@@ -368,7 +368,7 @@ tabla_pct = conteo.pivot_table(
 )
 
 # Redondear a 2 decimales SIN agregar "%"
-tabla_pct = tabla_pct.round(1)
+tabla_pct = tabla_pct.round(2)
 
 # Resetear índice para que 'Anio' sea una columna normal
 tabla_pct = tabla_pct.reset_index()

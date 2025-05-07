@@ -339,7 +339,7 @@ total_anual = conteo_mix.groupby("Anio")["Registros"].sum().reset_index(name="To
 
 # Calcular porcentaje del total por año
 conteo_mix = conteo_mix.merge(total_anual, on="Anio")
-conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(2)
+conteo_mix["Porcentaje"] = (conteo_mix["Registros"] / conteo_mix["Total"] * 100).round(1)
 
 # Obtener el proyecto dominante por año
 proyecto_max = (
@@ -355,16 +355,32 @@ conteo_pivot = conteo_mix.pivot_table(
     fill_value=0
 )
 
-# Agregar columnas de total y proyecto dominante
+# Insertar "Numero de Bitacoras" al inicio
 conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
-conteo_pivot["🏆 Proyecto Dominante"] = proyecto_max
 
-# Convertir todos los valores a texto sin símbolo %
+# Insertar "Proyecto Dominante" justo después (posición 1)
+conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
+
+
+# Convertir todos los valores a texto sin símbolo % (solo valores numéricos)
 tabla_final = conteo_pivot.copy()
-tabla_final = tabla_final.applymap(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
+
+for col in tabla_final.columns:
+    if col == "🔢 Numero de Bitacoras ":
+        # Mantener como entero
+        tabla_final[col] = tabla_final[col].apply(lambda x: int(x) if pd.notnull(x) else x)
+    elif tabla_final[col].dtype in [float, int]:
+        # Redondear a dos decimales
+        tabla_final[col] = tabla_final[col].apply(lambda x: round(x, 2) if pd.notnull(x) else x)
+
+
+
+# --- Crear copia de la tabla con columnas modificadas ---
+tabla_tooltip = tabla_final.copy()
+
 
 # Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Tabla: Numero de Bitacoras y Distribución porcentual(%)  por Proyecto y Categoría, por Año")
+st.markdown("### 📋 Número de Bitácoras y Distribución (%) por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 

@@ -73,6 +73,12 @@ if 'limpiar_filtros' not in st.session_state:
 
 select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
 
+# Limpiar filtros
+if st.sidebar.button("🧹 Limpiar filtros"):
+    st.session_state.limpiar_filtros = True
+    st.experimental_rerun()
+    
+
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
     for o in opciones:

@@ -246,7 +246,7 @@ if "Genero" in datos_filtrados.columns:
         datos_genero,
         names="Genero",
         values="Registros",
-        title="👩👨 Distribución Total de Productores(as) por Género",
+        title="👩👨 Distribución Total de Productores(as) por Género.",
         color="Genero",
         color_discrete_map=color_map_genero
     )

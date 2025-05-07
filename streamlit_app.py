@@ -226,30 +226,6 @@ with col8:
         st.plotly_chart(fig_productores, use_container_width=True)
 
 
-# --- Gráfico de evolución de productores por género a lo largo de los años ---
-if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
-    st.markdown("### 👩👨 Evolución del Número de Productores(as) por Género a lo largo del tiempo")
-
-    # Normalizar los valores de género a Hombre, Mujer y EnMongi
-    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("EnMongi")
-    datos_filtrados["Genero"] = datos_filtrados["Genero"].replace({
-        "Femenino": "Mujer",
-        "Masculino": "Hombre",
-        "NA": "EnMongi",
-        "NA..": "EnMongi"
-    })
-
-    # Agrupar por año y género
-    productores_genero_anio = datos_filtrados.groupby(["Anio", "Genero"])["Id_Productor"].nunique().reset_index()
-
-    # Definir el mapa de colores con las nuevas etiquetas
-    color_map_genero = {
-        "Mujer": "#ff69b4",       # Rosa
-        "Hombre": "#1f77b4",      # Azul
-        "EnMongi": "#d3d3d3"      # Gris
-    }
-
-
 # --- Gráfico de distribución por género ---
 if "Genero" in datos_filtrados.columns:
     st.markdown("---")
@@ -319,6 +295,31 @@ fig_distribucion.update_layout(
 )
 
 st.plotly_chart(fig_distribucion, use_container_width=True)
+
+
+# --- Gráfico de evolución de productores por género a lo largo de los años ---
+if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
+    st.markdown("### 👩👨 Evolución del Número de Productores(as) por Género a lo largo del tiempo")
+
+    # Normalizar los valores de género a Hombre, Mujer y EnMongi
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("EnMongi")
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].replace({
+        "Femenino": "Mujer",
+        "Masculino": "Hombre",
+        "NA": "EnMongi",
+        "NA..": "EnMongi"
+    })
+
+    # Agrupar por año y género
+    productores_genero_anio = datos_filtrados.groupby(["Anio", "Genero"])["Id_Productor"].nunique().reset_index()
+
+    # Definir el mapa de colores con las nuevas etiquetas
+    color_map_genero = {
+        "Mujer": "#ff69b4",       # Rosa
+        "Hombre": "#1f77b4",      # Azul
+        "EnMongi": "#d3d3d3"      # Gris
+    }
+
 
 
 

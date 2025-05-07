@@ -395,7 +395,7 @@ st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(60
 
 
 # --- Tabla de porcentajes por año y categoría adaptada al contenido ---
-st.markdown("### 📋 Distribución (%) por Categoría del Proyecto, por Año")
+st.markdown("### 📋 Tabla de Distribución por Categoría del Proyecto, por Año")
 
 # Pivotear para mostrar cada categoría como columna
 tabla_pct = conteo.pivot_table(
@@ -405,8 +405,8 @@ tabla_pct = conteo.pivot_table(
     fill_value=0
 )
 
-# Redondear a 2 decimales SIN agregar "%"
-tabla_pct = tabla_pct.round(2)
+# Redondear a 2 decimales y convertir a string con % para presentación
+tabla_pct = tabla_pct.round(2).astype(str) + " %"
 
 # Resetear índice para que 'Anio' sea una columna normal
 tabla_pct = tabla_pct.reset_index()

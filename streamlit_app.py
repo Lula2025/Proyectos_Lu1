@@ -308,16 +308,16 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
     )
 
     # Configurar diseño del gráfico
-  fig_genero_pct.update_layout(
+fig_genero_pct.update_layout(
     barmode="stack",
     yaxis_tickformat=".1f",
     yaxis_title="Porcentaje (%)",
     xaxis_title="Año",
     legend_title="Género",
-    height=500,      # Ajuste de altura
-    width=900,       # Ajuste de ancho
-    bargap=0.2,      # Espaciado entre barras, puedes ajustarlo si es necesario
-    )
+    height=450,    # Aumentar altura
+    width=700,     # Reducir ancho
+    bargap=0.3     # Espaciado entre barras, entre 0 (juntas) y 1 (muy separadas)
+)
 
     # Posicionar los textos dentro de las barras
     fig_genero_pct.update_traces(textposition="inside")

@@ -408,7 +408,7 @@ tabla_pct = conteo.pivot_table(
 )
 
 # Redondear a 2 decimales y convertir a string con % para presentación
-tabla_pct = tabla_pct.round(2).astype(str) + " %"
+tabla_pct = tabla_pct.round(2)
 
 # Resetear índice para que 'Anio' sea una columna normal
 tabla_pct = tabla_pct.reset_index()

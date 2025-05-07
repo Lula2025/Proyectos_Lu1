@@ -307,17 +307,15 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         text=productores_genero_anio["Porcentaje"].astype(str) + "%"
     )
 
-    # Configurar diseño del gráfico
-fig_genero_pct.update_layout(
-    barmode="stack",
-    yaxis_tickformat=".1f",
-    yaxis_title="Porcentaje (%)",
-    xaxis_title="Año",
-    legend_title="Género",
-    height=450,    # Aumentar altura
-    width=700,     # Reducir ancho
-    bargap=0.3     # Espaciado entre barras, entre 0 (juntas) y 1 (muy separadas)
-)
+ # Configurar diseño del gráfico
+    fig_genero_pct.update_layout(
+        barmode="stack",
+        yaxis_tickformat=".1f",
+        yaxis_title="Porcentaje (%)",
+        xaxis_title="Año",
+        legend_title="Género",
+        height=400
+    )
 
     # Posicionar los textos dentro de las barras
     fig_genero_pct.update_traces(textposition="inside")

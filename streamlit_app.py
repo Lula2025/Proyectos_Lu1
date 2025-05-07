@@ -382,7 +382,7 @@ tabla_tooltip = tabla_final.copy()
 
 # Mostrar tabla final sin % en ningún valor
 st.markdown("### 📋 Número de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
-st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 30 * len(tabla_final)))
+st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 
 

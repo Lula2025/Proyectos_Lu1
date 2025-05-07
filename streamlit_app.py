@@ -267,8 +267,8 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
     # Normalizar valores de género
     datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
     datos_filtrados["Genero"] = datos_filtrados["Genero"].replace({
-        "Femenino": "Femenino",
-        "Masculino": "Masculino",
+        "Hombre": "Masculino",
+        "Mujer": "Femenino",
         "NA": "NA.."
     })
 
@@ -301,6 +301,7 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
         color_discrete_map={
             "👨 Hombres": "#2ca02c",
             "👩 Mujeres": "#ff7f0e",
+            "🌈 Enmongi": "#9467bd",
             "❔ Sin dato": "#F0F0F0"
         },
         text=productores_genero_anio["Porcentaje"].astype(str) + "%"
@@ -322,9 +323,7 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
     # Mostrar el gráfico
     st.plotly_chart(fig_genero_pct, use_container_width=True)
 
-
-st.markdown("---")  # Esta es la línea de separación
-
+st.markdown("---")  # Línea de separación
 
 # --- Recuento por Año, Categoría y Proyecto ---
 conteo_mix = (

@@ -328,40 +328,28 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
 
 ####
 
-# --- Gráfico de distribución por género (número de registros) --- 
+# --- Recuento de registros por género por año ---
 if "Genero" in datos_filtrados.columns:
-    st.markdown("---")
-    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
-    categorias_genero = ["Masculino", "Femenino", "NA.."]
-    
-    # Agrupar por género y contar registros
-    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
-    datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
+    st.markdown("### Desglose de Registros por Género y Año")
 
-    # Crear gráfico de barras con el número de registros por género
-    color_map_genero = {
-        "Masculino": "#2ca02c",
-        "Femenino": "#ff7f0e",
-        "NA..": "#F0F0F0"
-    }
+    # Agrupar los datos por año y género
+    registros_genero_anio = datos_filtrados.groupby(["Anio", "Genero"]).size().reset_index(name="Registros")
 
-    fig_genero = px.bar(
-        datos_genero,
-        x="Genero",
-        y="Registros",
-        title="👩👨 Número de Productores(as) por Género",
-        color="Genero",
-        color_discrete_map=color_map_genero,
-        labels={"Genero": "Género", "Registros": "Número de Registros"}
-    )
+    # Asegurarse de que "Masculino" y "Femenino" estén presentes en los resultados, incluso si no hay registros
+    categorias_genero = ["Masculino", "Femenino"]
+    registros_genero_anio = registros_genero_anio.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
 
-    fig_genero.update_traces(
-        texttemplate='%{y}',  # Mostrar el número de registros en cada barra
-        textposition='outside',
-        marker=dict(line=dict(color='#FFFFFF', width=2))
-    )
+    # Pivotear la tabla para obtener las columnas de "Masculino" y "Femenino" por año
+    registros_genero_anio_pivot = registros_genero_anio.pivot_table(
+        index="Anio", columns="Genero", values="Registros", aggfunc="sum", fill_value=0
+    ).reset_index()
 
-    st.plotly_chart(fig_genero, use_container_width=True)
+    # Renombrar las columnas para claridad
+    registros_genero_anio_pivot.columns = ["Año", "Hombres", "Mujeres"]
+
+    # Mostrar la tabla
+    st.dataframe(registros_genero_anio_pivot, use_container_width=True)
+
 
 ########
 

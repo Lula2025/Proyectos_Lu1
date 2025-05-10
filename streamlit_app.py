@@ -326,6 +326,46 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
     st.plotly_chart(fig_genero_pct, use_container_width=True)
 
 
+####
+
+# --- Gráfico de distribución por género (número de registros) --- 
+if "Genero" in datos_filtrados.columns:
+    st.markdown("---")
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("NA..")
+    categorias_genero = ["Masculino", "Femenino", "NA.."]
+    
+    # Agrupar por género y contar registros
+    datos_genero = datos_filtrados.groupby("Genero").size().reset_index(name="Registros")
+    datos_genero = datos_genero.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
+
+    # Crear gráfico de barras con el número de registros por género
+    color_map_genero = {
+        "Masculino": "#2ca02c",
+        "Femenino": "#ff7f0e",
+        "NA..": "#F0F0F0"
+    }
+
+    fig_genero = px.bar(
+        datos_genero,
+        x="Genero",
+        y="Registros",
+        title="👩👨 Número de Productores(as) por Género",
+        color="Genero",
+        color_discrete_map=color_map_genero,
+        labels={"Genero": "Género", "Registros": "Número de Registros"}
+    )
+
+    fig_genero.update_traces(
+        texttemplate='%{y}',  # Mostrar el número de registros en cada barra
+        textposition='outside',
+        marker=dict(line=dict(color='#FFFFFF', width=2))
+    )
+
+    st.plotly_chart(fig_genero, use_container_width=True)
+
+########
+
+
 
 st.markdown("---")  # Línea de separación
 

@@ -328,27 +328,6 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
 
 ####
 
-# --- Recuento de registros por género por año ---
-if "Genero" in datos_filtrados.columns:
-    st.markdown("### Desglose de Registros por Género y Año")
-
-    # Agrupar los datos por año y género
-    registros_genero_anio = datos_filtrados.groupby(["Anio", "Genero"]).size().reset_index(name="Registros")
-
-    # Asegurarse de que "Masculino" y "Femenino" estén presentes en los resultados, incluso si no hay registros
-    categorias_genero = ["Masculino", "Femenino"]
-    registros_genero_anio = registros_genero_anio.set_index("Genero").reindex(categorias_genero, fill_value=0).reset_index()
-
-    # Pivotear la tabla para obtener las columnas de "Masculino" y "Femenino" por año
-    registros_genero_anio_pivot = registros_genero_anio.pivot_table(
-        index="Anio", columns="Genero", values="Registros", aggfunc="sum", fill_value=0
-    ).reset_index()
-
-    # Renombrar las columnas para claridad
-    registros_genero_anio_pivot.columns = ["Año", "Hombres", "Mujeres"]
-
-    # Mostrar la tabla
-    st.dataframe(registros_genero_anio_pivot, use_container_width=True)
 
 
 ########

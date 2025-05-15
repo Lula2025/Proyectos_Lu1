@@ -425,3 +425,37 @@ tabla_pct = tabla_pct.reset_index()
 # Mostrar tabla sin scroll horizontal (adaptada al contenido)
 st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
 
+
+# --- Tabla pivote: Número único de productores por género, proyecto y año ---
+if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.columns):
+    st.markdown("### 📊 Número Único de Productores(as) por Género (Tabla Pivote)")
+
+    # Normalizar valores de género
+    datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("n/a").replace({
+        "Hombre": "Masculino",
+        "Mujer": "Femenino",
+        "NA": "n/a",
+        "NA..": "n/a"
+    })
+
+    # Tabla base con conteo único de productores
+    tabla_base = (
+        datos_filtrados
+        .groupby(["Proyecto", "Anio", "Genero"])["Id_Productor"]
+        .nunique()
+        .reset_index()
+    )
+
+    # Crear tabla pivote
+    tabla_pivote = tabla_base.pivot_table(
+        index=["Proyecto", "Anio"],
+        columns="Genero",
+        values="Id_Productor",
+        aggfunc="sum",
+        fill_value=0,
+        margins=True,
+        margins_name="Grand Total"
+    ).reset_index()
+
+    # Mostrar tabla pivote
+    st.dataframe(tabla_pivote, use_container_width=True)

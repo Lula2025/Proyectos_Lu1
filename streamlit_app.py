@@ -428,7 +428,7 @@ st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabl
 
 # --- Tabla pivote: Número único de productores por género, proyecto y año ---
 if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.columns):
-    st.markdown("### 📊 Número Único de Productores(as) por Género (Tabla Pivote)")
+    st.markdown("### 📊 Número Único de Productores(as)")
 
     # Normalizar valores de género
     datos_filtrados["Genero"] = datos_filtrados["Genero"].fillna("n/a").replace({

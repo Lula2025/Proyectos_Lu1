@@ -12,7 +12,7 @@ st.set_page_config(
 
 # --- Leer el archivo ZIP ---
 archivo_zip = "Archivos.zip"
-nombre_csv = "Datos_Historicos_cuenta_al26032025.csv"
+nombre_csv = "Datos_Historicos_cuenta_actualizacion 23_24 _30052025.csv"
 
 try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:

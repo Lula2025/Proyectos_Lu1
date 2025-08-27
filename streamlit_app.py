@@ -607,7 +607,12 @@ parcelas_geo = (
     datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
     .agg(
         Parcelas=("Id_Parcela(Unico)", "nunique"),
-        **{"Cultivo(s)": ("Cultivo_Principal", lambda x: ", ".join(x.unique()))}
+        **{
+            "Cultivo(s)": (
+                "Cultivo_Principal",
+                lambda x: ", ".join([str(i) for i in x.dropna().unique()])
+            )
+        }
     )
     .reset_index()
 )

@@ -642,10 +642,10 @@ fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
     lon="Longitud",
-    size="Parcelas",
+    size="Parcelas",  # tamaño de los puntos sigue dependiendo de Parcelas
     color="Tipo de sistema",
     hover_name="Tipo de sistema",
-    hover_data={"Parcelas": True},  # solo columnas deseadas
+    hover_data={"Cultivo(s)": True},  # <-- solo muestra Cultivo(s)
     mapbox_style="carto-positron",
     center=mexico_center,
     zoom=4.5,

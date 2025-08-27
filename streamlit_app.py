@@ -608,49 +608,30 @@ parcelas_geo = (
     datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
     .agg(
         Parcelas=("Id_Parcela(Unico)", "nunique"),
-        Cultivos_unicos=("Cultivo_Principal", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
+        Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
     )
     .reset_index()
 )
 
-# Renombrar la columna calculada a "Cultivo(s)"
+# Renombrar a "Cultivo(s)"
 parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
-# --- Sidebar filtro por Tipo de sistema ---
-with st.sidebar.expander("Tipo de sistema"):
-    opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].dropna().unique())
-
-    seleccionar_todos_sistema = st.checkbox("Seleccionar todos los sistemas", value=True)
-    seleccion_sistema = []
-
-    for sistema in opciones_sistema:
-        checked = seleccionar_todos_sistema
-        if st.checkbox(sistema, value=checked, key=f"sistema_{sistema}"):
-            seleccion_sistema.append(sistema)
-
-# Aplicar filtro dinámico por Tipo de sistema
-if seleccion_sistema:
-    parcelas_geo = parcelas_geo[parcelas_geo["Tipo de sistema"].isin(seleccion_sistema)]
-
-# --- Definir centro de México ---
-mexico_center = {"lat": 23.0, "lon": -102.0}
-
-# --- Crear mapa interactivo ---
+# --- Crear mapa ---
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
     lon="Longitud",
-    size="Parcelas",  # puntos según número de parcelas
+    size="Parcelas",
     color="Tipo de sistema",
     hover_name="Tipo de sistema",
     hover_data={
-        "Cultivo(s)": True,   # ✅ ahora sí usa la nueva columna
-        "Latitud": False,     # oculta Latitud
-        "Longitud": False,    # oculta Longitud
-        "Parcelas": False     # oculta número de parcelas
+        "Cultivo(s)": True,  # ahora sí viene del campo original
+        "Latitud": False,
+        "Longitud": False,
+        "Parcelas": False
     },
     mapbox_style="carto-positron",
-    center=mexico_center,
+    center={"lat": 23.0, "lon": -102.0},
     zoom=4.5,
     height=700,
     width=700,

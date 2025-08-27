@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import zipfile
+import unicodedata
 
 # --- Configuración inicial de la página ---
 st.set_page_config(
@@ -592,6 +593,8 @@ st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 
 
+
+
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---
 parcelas_estado = datos_filtrados.groupby("Estado").agg({
@@ -689,3 +692,106 @@ fig_estado.update_layout(
 
 # --- Mostrar en Streamlit ---
 st.plotly_chart(fig_estado, use_container_width=True)
+
+
+
+# ==========================================================
+# 1. Normalización de nombres de cultivos
+# ==========================================================
+mapa_cultivos = {
+    "Maiz": "Maíz", "Maíz": "Maíz",
+    "Frijol": "Frijol",
+    "Trigo": "Trigo",
+    "Cebada": "Cebada",
+    "Sorgo": "Sorgo",
+    "Avena": "Avena",
+    "Garbanzo": "Garbanzo",
+    "Soya": "Soya",
+    "Girasol": "Girasol",
+    "Alfalfa": "Alfalfa",
+    "Calabaza": "Calabaza",
+    "Calabacita": "Calabacita",
+    "Triticale": "Triticale",
+    "Ajonjoli": "Ajonjolí", "Ajonjolí": "Ajonjolí",
+    "Chicharo": "Chícharo", "Chícharo": "Chícharo",
+    "Cacahuate": "Cacahuate"
+}
+
+def normalizar_texto(texto):
+    if pd.isna(texto):
+        return texto
+    # Eliminar acentos y pasar a capitalización estándar
+    texto_norm = ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+    return texto_norm.strip().capitalize()
+
+# ==========================================================
+# 2. Preparar datos
+# ==========================================================
+# Convertir coordenadas
+datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
+datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+
+# Normalizar cultivos
+datos_filtrados["Cultivo_Normalizado"] = (
+    datos_filtrados["Cultivo_Principal"]
+    .astype(str)
+    .apply(normalizar_texto)
+    .replace(mapa_cultivos)
+)
+
+# Filtrar solo cultivos válidos
+cultivos_validos = sorted(set(mapa_cultivos.values()))
+datos_geo_cultivo = datos_filtrados[
+    datos_filtrados["Cultivo_Normalizado"].isin(cultivos_validos)
+].dropna(subset=["Latitud", "Longitud"])
+
+# Agrupar por coordenadas + cultivo
+parcelas_cultivo = (
+    datos_geo_cultivo.groupby(["Latitud", "Longitud", "Cultivo_Normalizado"])["Id_Parcela(Unico)"]
+    .nunique()
+    .reset_index(name="Parcelas")
+)
+
+# ==========================================================
+# 3. Sidebar con casillas dinámicas
+# ==========================================================
+with st.sidebar.expander("Cultivo Principal"):
+    # Botón seleccionar todos
+    seleccionar_todos = st.checkbox("Seleccionar todos los cultivos", value=True, key="todos_cultivos")
+
+    seleccion_cultivos = []
+    for cultivo in cultivos_validos:
+        # Si el botón está marcado, todas las casillas se seleccionan
+        checked = seleccionar_todos
+        if st.checkbox(cultivo, value=checked, key=f"cultivo_{cultivo}"):
+            seleccion_cultivos.append(cultivo)
+
+# Filtrar según selección
+if seleccion_cultivos:
+    parcelas_cultivo = parcelas_cultivo[parcelas_cultivo["Cultivo_Normalizado"].isin(seleccion_cultivos)]
+
+# ==========================================================
+# 4. Crear mapa
+# ==========================================================
+fig_mapa_cultivo = px.scatter_mapbox(
+    parcelas_cultivo,
+    lat="Latitud",
+    lon="Longitud",
+    size="Parcelas",
+    color="Cultivo_Normalizado",
+    hover_name="Cultivo_Normalizado",
+    hover_data={"Latitud": True, "Longitud": True, "Parcelas": True},
+    mapbox_style="carto-positron",
+    center={"lat": 23.0, "lon": -102.0},  # centro aproximado México
+    zoom=4.5,
+    height=700,
+    width=700,
+    title="📍 Ubicación de Parcelas por Cultivo Principal"
+)
+
+fig_mapa_cultivo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
+
+st.plotly_chart(fig_mapa_cultivo, use_container_width=True)

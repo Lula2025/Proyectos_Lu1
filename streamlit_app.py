@@ -531,15 +531,25 @@ parcelas_geo = (
 # --- Sidebar filtro por Tipo de sistema ---
 with st.sidebar.expander("Tipo de sistema"):
     opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].dropna().unique())
-    seleccion_sistema = st.multiselect(
-        "Selecciona tipo(s) de sistema",
-        opciones_sistema,
-        default=opciones_sistema  # inicia con todos seleccionados
-    )
 
-# Aplicar filtro dinámico por Tipo de sistema si se seleccionó algo
-if seleccion_sistema:   # <- aquí necesitarías definir seleccion_sistema en tu sidebar
+    # Checkbox para seleccionar todos
+    seleccionar_todos_sistema = st.checkbox("Seleccionar todos los sistemas", value=True)
+
+    seleccion_sistema = []
+    for sistema in opciones_sistema:
+        if seleccionar_todos_sistema:
+            checked = True
+        else:
+            checked = False
+
+        if st.checkbox(sistema, value=checked, key=f"sistema_{sistema}"):
+            seleccion_sistema.append(sistema)
+
+# Aplicar filtro dinámico por Tipo de sistema
+if seleccion_sistema:
     parcelas_geo = parcelas_geo[parcelas_geo["Tipo de sistema"].isin(seleccion_sistema)]
+
+
 
 # --- Definir centro y límites para México ---
 mexico_center = {"lat": 23.0, "lon": -102.0}  # Centro aproximado de México

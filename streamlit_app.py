@@ -11,14 +11,14 @@ st.set_page_config(
 )
 
 # --- Leer el archivo ZIP ---
-archivo_zip = "Archivos.zip"
-nombre_csv = "Datos_Historicos_cuenta_actualizacion 23_24 _30052025.csv"
+archivo_zip = "Archivos.2.zip"
+nombre_csv = "Datos_Historicos_cuenta_actualizacion_23_24_30052025.2.csv"
 
 try:
     with zipfile.ZipFile(archivo_zip, 'r') as z:
         with z.open(nombre_csv) as f:
             datos = pd.read_csv(f)
-    st.success("Información basada en e-Agrology. Bitácoras agronómicas configuradas durante el año 2012_1er Trimestre 2025 ")
+    st.success("Información basada en e-Agrology. Bitácoras agronómicas configuradas durante el año 2012 al 2do Trimestre 2025 ")
 except FileNotFoundError:
     st.error(f"Error: El archivo '{archivo_zip}' no se encontró.")
     st.stop()
@@ -124,6 +124,22 @@ with st.sidebar.expander("Tipo de Parcela"):
         datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # Filtro por Estado
+
+cambios_estados = {
+    "MORELOS": "Morelos",
+    "PUEBLA": "Puebla",
+    "SINALOA": "Sinaloa",
+    "TABASCO": "Tabasco",
+    "Michoacán de Ocampo": "Michoacán",
+    "Ciudad de Mexico": "Ciudad de México",
+    "Veracruz de Ignacio de la Llave": "Veracruz",
+    "Coahuila de Zaragoza": "Coahuila",
+    
+    # agrega más según necesites
+}
+
+datos_filtrados["Estado"] = datos_filtrados["Estado"].replace(cambios_estados)
+
 with st.sidebar.expander("Estado"):
     estados = sorted(datos_filtrados["Estado"].unique())
     seleccion_estados = checkbox_list("Estado", estados, "estado")
@@ -131,6 +147,15 @@ with st.sidebar.expander("Estado"):
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # Filtro por Régimen Hídrico
+
+cambios_regimen = {
+    "RIEGO": "Riego",
+    "TEMPORAL": "Temporal",
+}
+
+# Normalizar la columna correcta
+datos_filtrados["Tipo_Regimen_Hidrico"] = datos_filtrados["Tipo_Regimen_Hidrico"].replace(cambios_regimen)
+
 with st.sidebar.expander("Régimen Hídrico"):
     regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
     seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
@@ -139,6 +164,35 @@ with st.sidebar.expander("Régimen Hídrico"):
 
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
+
+
+
+
+# Filtro por Año
+
+with st.sidebar.expander("Año"):
+    opciones_anio = sorted(datos_filtrados["Anio"].unique())
+
+    # Checkbox general
+    seleccionar_todos = st.checkbox("Seleccionar todos los años", value=True)
+
+    # Crear casillas independientes para cada año
+    seleccion_anio = []
+    for anio in opciones_anio:
+        if seleccionar_todos:
+            checked = True
+        else:
+            checked = False
+
+        if st.checkbox(str(anio), value=checked, key=f"anio_{anio}"):
+            seleccion_anio.append(anio)
+
+    # Filtrar datos
+    if seleccion_anio:
+        datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
+
+
+
 
 # --- Resumen de cifras totales ---
 st.markdown("### Informe de acuerdo a los Datos Filtrados")
@@ -459,3 +513,169 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
     # Mostrar tabla pivote
     st.dataframe(tabla_pivote, use_container_width=True)
+
+
+
+# --- Preparar datos ---
+datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
+datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
+
+# Agrupar por coordenadas y Tipo de sistema
+parcelas_geo = (
+    datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])["Id_Parcela(Unico)"]
+    .nunique()
+    .reset_index(name="Parcelas")
+)
+
+# --- Sidebar filtro por Tipo de sistema ---
+with st.sidebar.expander("Tipo de sistema"):
+    opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].dropna().unique())
+    seleccion_sistema = st.multiselect(
+        "Selecciona tipo(s) de sistema",
+        opciones_sistema,
+        default=opciones_sistema  # inicia con todos seleccionados
+    )
+
+# Aplicar filtro dinámico por Tipo de sistema si se seleccionó algo
+if seleccion_sistema:   # <- aquí necesitarías definir seleccion_sistema en tu sidebar
+    parcelas_geo = parcelas_geo[parcelas_geo["Tipo de sistema"].isin(seleccion_sistema)]
+
+# --- Definir centro y límites para México ---
+mexico_center = {"lat": 23.0, "lon": -102.0}  # Centro aproximado de México
+lat_range = [14.5, 32.7]  # Sur a Norte
+lon_range = [-118.5, -86.7]  # Oeste a Este
+
+# --- Crear mapa interactivo ---
+fig_mapa_geo = px.scatter_mapbox(
+    parcelas_geo,
+    lat="Latitud",
+    lon="Longitud",
+    size="Parcelas",
+    color="Tipo de sistema",   # <- cambio aquí
+    hover_name="Tipo de sistema",  # <- cambio aquí
+    hover_data={"Latitud": True, "Longitud": True, "Parcelas": True},
+    mapbox_style="carto-positron",
+    center=mexico_center,
+    zoom=4.5,
+    height=700,
+    width=700,
+    title="📍 Distribución Geográfica de Parcelas por Tipo de Sistema"
+)
+
+# Ajustar tamaño máximo de los puntos
+fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
+
+# Limitar visualización al rango de México
+fig_mapa_geo.update_layout(
+    mapbox=dict(
+        center=mexico_center,
+        zoom=4.5,
+        bearing=0,
+        pitch=0,
+    ),
+    margin={"l":0,"r":0,"t":50,"b":0}
+)
+
+# Mostrar mapa en Streamlit
+st.plotly_chart(fig_mapa_geo, use_container_width=True)
+
+
+
+# -----------------------------------
+# --- Crear DataFrame con número de parcelas por estado según el filtro activo ---
+parcelas_estado = datos_filtrados.groupby("Estado").agg({
+    "Id_Parcela(Unico)": "nunique"
+}).reset_index().rename(columns={"Id_Parcela(Unico)": "Parcelas"})
+
+# --- Coordenadas aproximadas para el centro de cada estado ---
+centros_estados = {
+    "Aguascalientes": {"lat": 21.885, "lon": -102.291},
+    "Baja California": {"lat": 30.840, "lon": -115.283},
+    "Baja California Sur": {"lat": 26.049, "lon": -111.666},
+    "Campeche": {"lat": 19.830, "lon": -90.534},
+    "Chiapas": {"lat": 16.756, "lon": -93.116},
+    "Chihuahua": {"lat": 28.632, "lon": -106.069},
+    "Ciudad de México": {"lat": 19.432, "lon": -99.133},
+    "Coahuila": {"lat": 27.058, "lon": -101.706},
+    "Colima": {"lat": 19.243, "lon": -103.724},
+    "Durango": {"lat": 24.027, "lon": -104.653},
+    "Guanajuato": {"lat": 21.019, "lon": -101.257},
+    "Guerrero": {"lat": 17.551, "lon": -99.503},
+    "Hidalgo": {"lat": 20.091, "lon": -98.762},
+    "Jalisco": {"lat": 20.659, "lon": -103.349},
+    "México": {"lat": 19.345, "lon": -99.837},
+    "Michoacán": {"lat": 19.566, "lon": -101.706},
+    "Morelos": {"lat": 18.681, "lon": -99.101},
+    "Nayarit": {"lat": 21.751, "lon": -104.845},
+    "Nuevo León": {"lat": 25.675, "lon": -100.318},
+    "Oaxaca": {"lat": 17.073, "lon": -96.726},
+    "Puebla": {"lat": 19.041, "lon": -98.206},
+    "Querétaro": {"lat": 20.588, "lon": -100.389},
+    "Quintana Roo": {"lat": 19.181, "lon": -88.479},
+    "San Luis Potosí": {"lat": 22.156, "lon": -100.985},
+    "Sinaloa": {"lat": 25.172, "lon": -107.479},
+    "Sonora": {"lat": 29.297, "lon": -110.330},
+    "Tabasco": {"lat": 17.840, "lon": -92.618},
+    "Tamaulipas": {"lat": 23.747, "lon": -98.525},
+    "Tlaxcala": {"lat": 19.318, "lon": -98.237},
+    "Veracruz": {"lat": 19.173, "lon": -96.134},
+    "Yucatán": {"lat": 20.709, "lon": -89.094},
+    "Zacatecas": {"lat": 22.770, "lon": -102.583}
+}
+
+# --- Agregar columnas de latitud y longitud ---
+parcelas_estado["Latitud"] = parcelas_estado["Estado"].map(lambda x: centros_estados.get(x, {}).get("lat", 23.0))
+parcelas_estado["Longitud"] = parcelas_estado["Estado"].map(lambda x: centros_estados.get(x, {}).get("lon", -102.0))
+
+# --- Crear mapa de burbujas interactivo ---
+fig_estado = px.scatter_mapbox(
+    parcelas_estado,
+    lat="Latitud",
+    lon="Longitud",
+    size="Parcelas",
+    color="Parcelas",
+    hover_name="Estado",
+    hover_data={"Parcelas": True, "Latitud": False, "Longitud": False},  
+    size_max=6,  # círculos pequeños
+    color_continuous_scale="Plasma",
+    zoom=4.5,
+    center={"lat": 23.0, "lon": -102.0},
+    mapbox_style="carto-positron",
+    title="📍 Número de Parcelas Atendidas por Estado"
+)
+
+# --- Ajuste dinámico de escala de colores ---
+cmin = parcelas_estado["Parcelas"].min()
+cmax = parcelas_estado["Parcelas"].max()
+
+# Dividir la leyenda en 5–6 intervalos para mayor diversidad de colores
+step = max(1, (cmax - cmin) // 6)
+
+fig_estado.update_traces(
+    marker=dict(
+        sizemode="area",
+        sizeref=30,  # controlar tamaño de círculos
+        sizemin=1,
+        color=parcelas_estado["Parcelas"],
+        cmin=cmin,
+        cmax=cmax,
+        showscale=True
+    ),
+    text=parcelas_estado["Parcelas"],  
+    textposition="top center"
+)
+
+# --- Leyenda y layout general ---
+fig_estado.update_layout(
+    margin={"l":0,"r":0,"t":50,"b":0},
+    height=700,
+    coloraxis_colorbar=dict(
+        title="Parcelas",
+        tickvals=list(range(cmin, cmax + step, step)),
+        ticktext=[f"{v//1000}k" for v in range(cmin, cmax + step, step)]
+    )
+)
+
+# --- Mostrar en Streamlit ---
+st.plotly_chart(fig_estado, use_container_width=True)

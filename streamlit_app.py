@@ -601,12 +601,17 @@ datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="c
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# Agrupar por coordenadas y Tipo de sistema
+
+# --- Agrupar por coordenadas y Tipo de sistema, y crear columna Cultivo(s) ---
 parcelas_geo = (
-    datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])["Id_Parcela(Unico)"]
-    .nunique()
-    .reset_index(name="Parcelas")
+    datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
+    .agg(
+        Parcelas=("Id_Parcela(Unico)", "nunique"),
+        **{"Cultivo(s)": ("Cultivo_Principal", lambda x: ", ".join(x.unique()))}
+    )
+    .reset_index()
 )
+
 
 # --- Sidebar filtro por Tipo de sistema ---
 with st.sidebar.expander("Tipo de sistema"):

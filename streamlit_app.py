@@ -194,6 +194,78 @@ with st.sidebar.expander("Año"):
 
 
 
+#------- filtro para cultivos
+
+# ==========================================================
+# 1. Normalización de nombres de cultivos
+# ==========================================================
+mapa_cultivos = {
+    "Maiz": "Maíz", "Maíz": "Maíz",
+    "Frijol": "Frijol",
+    "Trigo": "Trigo",
+    "Cebada": "Cebada",
+    "Sorgo": "Sorgo",
+    "Avena": "Avena",
+    "Garbanzo": "Garbanzo",
+    "Soya": "Soya",
+    "Girasol": "Girasol",
+    "Alfalfa": "Alfalfa",
+    "Calabaza": "Calabaza",
+    "Calabacita": "Calabacita",
+    "Triticale": "Triticale",
+    "Ajonjoli": "Ajonjolí", "Ajonjolí": "Ajonjolí",
+    "Chicharo": "Chícharo", "Chícharo": "Chícharo",
+    "Cacahuate": "Cacahuate"
+}
+
+def normalizar_texto(texto):
+    if pd.isna(texto):
+        return texto
+    # Eliminar acentos y pasar a capitalización estándar
+    texto_norm = ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+    return texto_norm.strip().capitalize()
+
+# ==========================================================
+# 2. Preparar datos
+# ==========================================================
+# Normalizar cultivos
+datos_filtrados["Cultivo_Normalizado"] = (
+    datos_filtrados["Cultivo_Principal"]
+    .astype(str)
+    .apply(normalizar_texto)
+    .replace(mapa_cultivos)
+)
+
+# Filtrar solo cultivos válidos
+cultivos_validos = sorted(set(mapa_cultivos.values()))
+parcelas_cultivo = datos_filtrados[
+    datos_filtrados["Cultivo_Normalizado"].isin(cultivos_validos)
+]
+
+# ==========================================================
+# 3. Sidebar con casillas dinámicas
+# ==========================================================
+with st.sidebar.expander("Cultivo Principal"):
+    # Botón seleccionar todos
+    seleccionar_todos = st.checkbox("Seleccionar todos los cultivos", value=True, key="todos_cultivos")
+
+    seleccion_cultivos = []
+    for cultivo in cultivos_validos:
+        checked = seleccionar_todos
+        if st.checkbox(cultivo, value=checked, key=f"cultivo_{cultivo}"):
+            seleccion_cultivos.append(cultivo)
+
+# Filtrar según selección
+if seleccion_cultivos:
+    parcelas_cultivo = parcelas_cultivo[parcelas_cultivo["Cultivo_Normalizado"].isin(seleccion_cultivos)]
+
+
+#----temina para cultivos
+
+
 
 # --- Resumen de cifras totales ---
 st.markdown("### Informe de acuerdo a los Datos Filtrados")
@@ -695,71 +767,6 @@ st.plotly_chart(fig_estado, use_container_width=True)
 
 
 
-# ==========================================================
-# 1. Normalización de nombres de cultivos
-# ==========================================================
-mapa_cultivos = {
-    "Maiz": "Maíz", "Maíz": "Maíz",
-    "Frijol": "Frijol",
-    "Trigo": "Trigo",
-    "Cebada": "Cebada",
-    "Sorgo": "Sorgo",
-    "Avena": "Avena",
-    "Garbanzo": "Garbanzo",
-    "Soya": "Soya",
-    "Girasol": "Girasol",
-    "Alfalfa": "Alfalfa",
-    "Calabaza": "Calabaza",
-    "Calabacita": "Calabacita",
-    "Triticale": "Triticale",
-    "Ajonjoli": "Ajonjolí", "Ajonjolí": "Ajonjolí",
-    "Chicharo": "Chícharo", "Chícharo": "Chícharo",
-    "Cacahuate": "Cacahuate"
-}
 
-def normalizar_texto(texto):
-    if pd.isna(texto):
-        return texto
-    # Eliminar acentos y pasar a capitalización estándar
-    texto_norm = ''.join(
-        c for c in unicodedata.normalize('NFD', texto)
-        if unicodedata.category(c) != 'Mn'
-    )
-    return texto_norm.strip().capitalize()
 
-# ==========================================================
-# 2. Preparar datos
-# ==========================================================
-# Normalizar cultivos
-datos_filtrados["Cultivo_Normalizado"] = (
-    datos_filtrados["Cultivo_Principal"]
-    .astype(str)
-    .apply(normalizar_texto)
-    .replace(mapa_cultivos)
-)
 
-# Filtrar solo cultivos válidos
-cultivos_validos = sorted(set(mapa_cultivos.values()))
-parcelas_cultivo = datos_filtrados[
-    datos_filtrados["Cultivo_Normalizado"].isin(cultivos_validos)
-]
-
-# ==========================================================
-# 3. Sidebar con casillas dinámicas
-# ==========================================================
-with st.sidebar.expander("Cultivo Principal"):
-    # Botón seleccionar todos
-    seleccionar_todos = st.checkbox("Seleccionar todos los cultivos", value=True, key="todos_cultivos")
-
-    seleccion_cultivos = []
-    for cultivo in cultivos_validos:
-        checked = seleccionar_todos
-        if st.checkbox(cultivo, value=checked, key=f"cultivo_{cultivo}"):
-            seleccion_cultivos.append(cultivo)
-
-# Filtrar según selección
-if seleccion_cultivos:
-    parcelas_cultivo = parcelas_cultivo[parcelas_cultivo["Cultivo_Normalizado"].isin(seleccion_cultivos)]
-
-# Mostrar tabla filtrada (opcional)
-st.dataframe(parcelas_cultivo)

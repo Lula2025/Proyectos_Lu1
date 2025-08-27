@@ -637,14 +637,15 @@ lat_range = [14.5, 32.7]  # Sur a Norte
 lon_range = [-118.5, -86.7]  # Oeste a Este
 
 # --- Crear mapa interactivo ---
+
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
     lon="Longitud",
     size="Parcelas",
-    color="Tipo de sistema",   # <- cambio aquí
-    hover_name="Tipo de sistema",  # <- cambio aquí
-    hover_data={"Cultivo(s)": True},
+    color="Tipo de sistema",
+    hover_name="Tipo de sistema",
+    hover_data={"Parcelas": True},  # solo columnas deseadas
     mapbox_style="carto-positron",
     center=mexico_center,
     zoom=4.5,

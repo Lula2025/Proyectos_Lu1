@@ -617,6 +617,10 @@ parcelas_geo = (
 parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
 # --- Crear mapa ---
+
+
+mexico_center = {"lat": 23.0, "lon": -102.0}
+
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",

@@ -603,20 +603,18 @@ datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="c
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# --- Agrupar por coordenadas y Tipo de sistema, y crear columna Cultivo(s) ---
+# --- Agrupar por coordenadas y Tipo de sistema ---
 parcelas_geo = (
     datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
     .agg(
         Parcelas=("Id_Parcela(Unico)", "nunique"),
-        **{
-            "Cultivo(s)": (
-                "Cultivo_Principal",
-                lambda x: ", ".join([str(i) for i in x.dropna().unique()])
-            )
-        }
+        Cultivos_unicos=("Cultivo_Principal", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
     )
     .reset_index()
 )
+
+# Renombrar la columna calculada a "Cultivo(s)"
+parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
 # --- Sidebar filtro por Tipo de sistema ---
 with st.sidebar.expander("Tipo de sistema"):
@@ -634,22 +632,22 @@ with st.sidebar.expander("Tipo de sistema"):
 if seleccion_sistema:
     parcelas_geo = parcelas_geo[parcelas_geo["Tipo de sistema"].isin(seleccion_sistema)]
 
-# --- Definir centro y límites para México ---
-mexico_center = {"lat": 23.0, "lon": -102.0}  # Centro aproximado de México
+# --- Definir centro de México ---
+mexico_center = {"lat": 23.0, "lon": -102.0}
 
 # --- Crear mapa interactivo ---
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
     lon="Longitud",
-    size="Parcelas",  # tamaño de los puntos según número de parcelas
+    size="Parcelas",  # puntos según número de parcelas
     color="Tipo de sistema",
     hover_name="Tipo de sistema",
     hover_data={
-        "Cultivo(s)": True,   # mostrar Cultivo(s)
-        "Latitud": False,     # ocultar Latitud
-        "Longitud": False,    # ocultar Longitud
-        "Parcelas": False     # ocultar número de parcelas
+        "Cultivo(s)": True,   # ✅ ahora sí usa la nueva columna
+        "Latitud": False,     # oculta Latitud
+        "Longitud": False,    # oculta Longitud
+        "Parcelas": False     # oculta número de parcelas
     },
     mapbox_style="carto-positron",
     center=mexico_center,
@@ -659,10 +657,10 @@ fig_mapa_geo = px.scatter_mapbox(
     title="📍 Distribución Geográfica de Parcelas por Tipo de Sistema"
 )
 
-# Ajustar tamaño mínimo de los puntos
+# Ajustar puntos
 fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 
-# Ajustar diseño del mapa
+# Layout
 fig_mapa_geo.update_layout(
     mapbox=dict(center=mexico_center, zoom=4.5, bearing=0, pitch=0),
     margin={"l":0,"r":0,"t":50,"b":0}
@@ -670,7 +668,6 @@ fig_mapa_geo.update_layout(
 
 # Mostrar mapa en Streamlit
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 
 

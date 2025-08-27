@@ -641,16 +641,22 @@ mexico_center = {"lat": 23.0, "lon": -102.0}  # Centro aproximado de México
 lat_range = [14.5, 32.7]  # Sur a Norte
 lon_range = [-118.5, -86.7]  # Oeste a Este
 
-# --- Crear mapa interactivo ---
 
+
+# --- Crear mapa interactivo ---
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
     lon="Longitud",
-    size="Parcelas",  # tamaño de los puntos sigue dependiendo de Parcelas
+    size=None,  # desactivamos el tamaño por Parcelas si no quieres mostrarlo
     color="Tipo de sistema",
     hover_name="Tipo de sistema",
-    hover_data={"Cultivo(s)": True},  # <-- solo muestra Cultivo(s)
+    hover_data={
+        "Cultivo(s)": True,  # muestra Cultivo(s)
+        "Latitud": False,    # oculta Latitud
+        "Longitud": False,   # oculta Longitud
+        "Parcelas": False    # oculta número de parcelas
+    },
     mapbox_style="carto-positron",
     center=mexico_center,
     zoom=4.5,
@@ -659,10 +665,9 @@ fig_mapa_geo = px.scatter_mapbox(
     title="📍 Distribución Geográfica de Parcelas por Tipo de Sistema"
 )
 
-# Ajustar tamaño máximo de los puntos
+# Ajustar layout y tamaño mínimo de los puntos si deseas seguir usando tamaño
 fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 
-# Limitar visualización al rango de México
 fig_mapa_geo.update_layout(
     mapbox=dict(
         center=mexico_center,
@@ -675,7 +680,6 @@ fig_mapa_geo.update_layout(
 
 # Mostrar mapa en Streamlit
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 
 

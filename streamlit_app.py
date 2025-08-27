@@ -248,20 +248,27 @@ parcelas_cultivo = datos_filtrados[
 # ==========================================================
 # 3. Sidebar con casillas dinámicas
 # ==========================================================
+# Sidebar con filtro de cultivos
 with st.sidebar.expander("Cultivo Principal"):
-    # Botón seleccionar todos
-    seleccionar_todos = st.checkbox("Seleccionar todos los cultivos", value=True, key="todos_cultivos")
+    opciones_cultivo = sorted(set(datos_filtrados["Cultivo_Normalizado"]))
+    
+    # Checkbox general
+    seleccionar_todos_cultivos = st.checkbox("Seleccionar todos los cultivos", value=True)
 
+    # Casillas individuales
     seleccion_cultivos = []
-    for cultivo in cultivos_validos:
-        checked = seleccionar_todos
+    for cultivo in opciones_cultivo:
+        if seleccionar_todos_cultivos:
+            checked = True
+        else:
+            checked = False
+
         if st.checkbox(cultivo, value=checked, key=f"cultivo_{cultivo}"):
             seleccion_cultivos.append(cultivo)
 
-# Filtrar según selección
+# Filtrar datos
 if seleccion_cultivos:
-    parcelas_cultivo = parcelas_cultivo[parcelas_cultivo["Cultivo_Normalizado"].isin(seleccion_cultivos)]
-
+    datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
 
 #----temina para cultivos
 

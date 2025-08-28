@@ -147,25 +147,6 @@ with st.sidebar.expander("Estado"):
     if seleccion_estados:
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
-# Filtro por Régimen Hídrico
-
-cambios_regimen = {
-    "RIEGO": "Riego",
-    "TEMPORAL": "Temporal",
-}
-
-# Normalizar la columna correcta
-datos_filtrados["Tipo_Regimen_Hidrico"] = datos_filtrados["Tipo_Regimen_Hidrico"].replace(cambios_regimen)
-
-with st.sidebar.expander("Régimen Hídrico"):
-    regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
-    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
-    if seleccion_regimen:
-        datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
-
-if st.session_state.limpiar_filtros:
-    st.session_state.limpiar_filtros = False
-
 
 # --- Filtro por HUB Agroecológico ---
 with st.sidebar.expander("HUB Agroecológico"):
@@ -183,6 +164,28 @@ with st.sidebar.expander("HUB Agroecológico"):
         datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hub)]
 
 # Reset de filtros
+if st.session_state.limpiar_filtros:
+    st.session_state.limpiar_filtros = False
+
+
+
+
+# Filtro por Régimen Hídrico
+
+cambios_regimen = {
+    "RIEGO": "Riego",
+    "TEMPORAL": "Temporal",
+}
+
+# Normalizar la columna correcta
+datos_filtrados["Tipo_Regimen_Hidrico"] = datos_filtrados["Tipo_Regimen_Hidrico"].replace(cambios_regimen)
+
+with st.sidebar.expander("Régimen Hídrico"):
+    regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
+    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
+    if seleccion_regimen:
+        datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
+
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
 

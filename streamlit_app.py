@@ -610,9 +610,10 @@ fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
-# --- Crear diccionario de colores por SIGLA ---
+# --- Crear diccionario de colores por SIGLA usando paleta fija ---
 siglas = hubs["SIGLA"].unique()
-colores = {sigla: f'rgba({random.randint(0,255)},{random.randint(0,255)},{random.randint(0,255)},0.3)' for sigla in siglas}
+paleta = qualitative.Plotly  # paleta de colores de Plotly
+colores = {sigla: paleta[i % len(paleta)] for i, sigla in enumerate(siglas)}
 
 # --- Agregar polígonos de Hubs ---
 for i, row in hubs.iterrows():
@@ -627,8 +628,8 @@ for i, row in hubs.iterrows():
             lat=lats,
             mode="lines",
             fill="toself",
-            fillcolor=color,
-            line=dict(width=2, color=color.replace("0.3","1")),
+            fillcolor=color + "33",  # semitransparente usando hexadecimal alfa
+            line=dict(width=2, color=color),
             name=sigla,
             legendgroup=sigla,
             showlegend=True
@@ -648,6 +649,7 @@ fig_mapa_geo.update_layout(
 
 # Mostrar en Streamlit
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
+
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

@@ -580,6 +580,12 @@ max_puntos = 3000
 if len(parcelas_geo) > max_puntos:
     parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
 
+# --- Crear diccionario de colores para Tipo de sistema ---
+tipos = parcelas_geo["Tipo de sistema"].unique()
+colores_sistema_list = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A", "#19D3F3", "#FF6692"]
+colores_sistema_dict = {tipo: colores_sistema_list[i % len(colores_sistema_list)] for i, tipo in enumerate(tipos)}
+colores_parcelas = parcelas_geo["Tipo de sistema"].map(colores_sistema_dict)
+
 # --- Crear figura base ---
 fig_mapa_geo = go.Figure()
 
@@ -589,21 +595,21 @@ fig_mapa_geo.add_trace(go.Scattermapbox(
     lon=parcelas_geo["Longitud"],
     mode="markers",
     marker=dict(
-        size=parcelas_geo["Parcelas"]*2,  # ajustar tamaño si quieres
+        size=parcelas_geo["Parcelas"]*2,
         sizemode="area",
         sizemin=4,
-        color=parcelas_geo["Tipo de sistema"],
+        color=colores_parcelas,
         showscale=False
     ),
     text=parcelas_geo["Cultivo(s)"],
     name="Parcelas"
 ))
 
-# --- Cargar y simplificar shapefile de Hubs ---
+# --- Cargar shapefile de Hubs y simplificar geometría ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 hubs["geometry"] = hubs["geometry"].simplify(tolerance=0.01, preserve_topology=True)
 
-# Colores predefinidos
+# Colores predefinidos para SIGLA
 colores_predefinidos = [
     "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
     "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
@@ -615,7 +621,7 @@ def hex_to_rgba(hex_color, alpha=0.3):
     r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
     return f'rgba({r},{g},{b},{alpha})'
 
-colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(hubs["SIGLA"].unique())}
+colores_hubs = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(hubs["SIGLA"].unique())}
 
 # --- Control de leyenda ---
 leyenda_mostrada = set()
@@ -623,7 +629,7 @@ leyenda_mostrada = set()
 # --- Agregar polígonos de Hubs ---
 for i, row in hubs.iterrows():
     sigla = row["SIGLA"]
-    color = colores[sigla]
+    color = colores_hubs[sigla]
     geometria = row.geometry
 
     def agregar_poligono(poly_coords):

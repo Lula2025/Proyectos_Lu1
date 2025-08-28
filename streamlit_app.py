@@ -610,10 +610,15 @@ fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
-# --- Crear diccionario de colores por SIGLA usando paleta fija ---
+# --- Lista de colores predefinidos ---
+colores_predefinidos = [
+    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A", "#19D3F3", "#FF6692", "#B6E880",
+    "#FF97FF", "#FECB52", "#FFB6C1", "#C2C2F0", "#FF6666", "#C2F0C2", "#F0C2F0", "#F0F0C2"
+]
+
+# --- Crear diccionario de colores por SIGLA ---
 siglas = hubs["SIGLA"].unique()
-paleta = qualitative.Plotly  # paleta de colores de Plotly
-colores = {sigla: paleta[i % len(paleta)] for i, sigla in enumerate(siglas)}
+colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(siglas)}
 
 # --- Agregar polígonos de Hubs ---
 for i, row in hubs.iterrows():

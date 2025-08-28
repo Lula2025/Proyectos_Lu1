@@ -131,7 +131,8 @@ seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto"
 if seleccion_categorias and not todos_categorias:
     datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
     
-st.markdown("---")  # Esta es la línea de separación    
+st.markdown("---")  # Esta es la línea de separación
+st.sidebar.markdown('<hr style="border:1.5px dashed #444; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Proyecto ---
 proyectos = sorted(datos_filtrados["Proyecto"].unique())
@@ -204,8 +205,6 @@ else:
 
 
 
-
-
 # --- Resumen de cifras totales ---
 st.markdown("### Informe de acuerdo a los filtros")
 
@@ -216,9 +215,7 @@ total_productores = datos_filtrados["Id_Productor"].nunique() if "Id_Productor" 
 
 col_r1, col_r2, col_r3, col_r4 = st.columns(4)
 col_r1.metric("📋 Total de Bitácoras", f"{total_bitacoras:,}")
-col_r2.metric("🌿 Área Total (ha)", f"{tot
-                                      
-                                      al_area:,.2f}")
+col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}"))
 col_r3.metric("🌄 Número de Parcelas Totales", f"{total_parcelas:,}")
 col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
 

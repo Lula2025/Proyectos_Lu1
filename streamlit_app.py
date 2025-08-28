@@ -131,7 +131,7 @@ seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto"
 if seleccion_categorias and not todos_categorias:
     datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
     
-st.markdown("---")  # Esta es la línea de separación
+st.markdown('<hr style="border:2px solid #888;">', unsafe_allow_html=True)
 
 # --- Filtro por Proyecto ---
 proyectos = sorted(datos_filtrados["Proyecto"].unique())

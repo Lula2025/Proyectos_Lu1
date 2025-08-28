@@ -139,12 +139,16 @@ proyectos = sorted(datos_filtrados["Proyecto"].unique())
 seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
 if seleccion_proyectos and not todos_proyectos:
     datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
+    
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Ciclo ---
 ciclos = sorted(datos_filtrados["Ciclo"].unique())
 seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
 if seleccion_ciclos and not todos_ciclos:
     datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
+    
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Tipo de Parcela ---
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
@@ -152,11 +156,15 @@ seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", 
 if seleccion_tipos_parcela and not todos_tipos_parcela:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
 # --- Filtro por Estado ---
 estados = sorted(datos_filtrados["Estado"].unique())
 seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
 if seleccion_estados and not todos_estados:
     datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
+
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por HUB Agroecológico ---
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
@@ -164,11 +172,15 @@ seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
 if seleccion_hubs and not todos_hubs:
     datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
 # --- Filtro por Año ---
 opciones_anio = sorted(datos_filtrados["Anio"].unique())
 seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
 if seleccion_anio and not todos_anio:
     datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
+
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Cultivos ---
 datos_filtrados["Cultivo_Normalizado"] = (

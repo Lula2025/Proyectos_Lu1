@@ -87,13 +87,6 @@ def checkbox_list(label, opciones, prefix):
 # Inicializar con todos los datos
 datos_filtrados = datos.copy()
 
-# --- Normalizar Cultivo_Principal para filtros ---
-datos_filtrados["Cultivo_Normalizado"] = (
-    datos_filtrados["Cultivo_Principal"]
-    .astype(str)
-    .apply(normalizar_texto)
-    .replace(mapa_cultivos)
-)
 
 #######
 
@@ -195,6 +188,15 @@ with st.sidebar.expander("Año"):
         datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 
 # --- Filtro por Cultivos ---
+
+# --- Normalizar Cultivo_Principal para filtros ---
+datos_filtrados["Cultivo_Normalizado"] = (
+    datos_filtrados["Cultivo_Principal"]
+    .astype(str)
+    .apply(normalizar_texto)
+    .replace(mapa_cultivos)
+)
+
 with st.sidebar.expander("Cultivo Principal"):
     opciones_cultivo = sorted(set(datos_filtrados["Cultivo_Normalizado"]))
     seleccionar_todos_cultivos = st.checkbox("Seleccionar todos los cultivos", value=True)

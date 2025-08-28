@@ -610,17 +610,23 @@ fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
-# --- Lista de colores predefinidos ---
+# --- Lista de colores hexadecimales ---
 colores_predefinidos = [
-    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A", "#19D3F3", "#FF6692", "#B6E880",
-    "#FF97FF", "#FECB52", "#FFB6C1", "#C2C2F0", "#FF6666", "#C2F0C2", "#F0C2F0", "#F0F0C2"
+    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
+    "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52"
 ]
 
-# --- Crear diccionario de colores por SIGLA ---
+# --- Función para convertir hex a rgba ---
+def hex_to_rgba(hex_color, alpha=0.3):
+    hex_color = hex_color.lstrip('#')
+    r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
+    return f'rgba({r},{g},{b},{alpha})'
+
+# --- Diccionario de colores por SIGLA ---
 siglas = hubs["SIGLA"].unique()
 colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(siglas)}
 
-# --- Agregar polígonos de Hubs ---
+# --- Agregar polígonos ---
 for i, row in hubs.iterrows():
     sigla = row["SIGLA"]
     color = colores[sigla]
@@ -633,7 +639,7 @@ for i, row in hubs.iterrows():
             lat=lats,
             mode="lines",
             fill="toself",
-            fillcolor=color + "33",  # semitransparente usando hexadecimal alfa
+            fillcolor=hex_to_rgba(color, 0.3),  # ✅ transparencia segura
             line=dict(width=2, color=color),
             name=sigla,
             legendgroup=sigla,
@@ -652,7 +658,6 @@ fig_mapa_geo.update_layout(
     margin={"l":0,"r":0,"t":50,"b":0}
 )
 
-# Mostrar en Streamlit
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 

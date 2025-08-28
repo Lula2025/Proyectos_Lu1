@@ -610,42 +610,35 @@ fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
+# --- Crear diccionario de colores por categoría ---
+categorias = hubs["Categoria"].unique()  # cambia "Categoria" al nombre de tu columna
+colores = {cat: f'rgba({random.randint(0,255)},{random.randint(0,255)},{random.randint(0,255)},0.3)' for cat in categorias}
+
 # --- Agregar polígonos de Hubs ---
 for i, row in hubs.iterrows():
+    categoria = row["Categoria"]  # nombre de la categoría
+    color = colores[categoria]
     geometria = row.geometry
 
-    # Polygon
-    if geometria.geom_type == "Polygon":
-        coords = list(geometria.exterior.coords)
-        lons, lats = zip(*coords)
+    def agregar_poligono(poly_coords):
+        lons, lats = zip(*poly_coords)
         fig_mapa_geo.add_trace(go.Scattermapbox(
             lon=lons,
             lat=lats,
             mode="lines",
             fill="toself",
-            fillcolor="rgba(0, 0, 255, 0.2)",  # semitransparente
-            line=dict(width=2, color="blue"),
-            name="Hubs MasAgro",
-            legendgroup="Hubs MasAgro",
-            showlegend=(i == 0)  # 🔹 solo se muestra 1 vez en la leyenda
+            fillcolor=color,
+            line=dict(width=2, color=color.replace("0.3","1")),  # borde más visible
+            name=categoria,
+            legendgroup=categoria,
+            showlegend=True
         ))
 
-    # MultiPolygon
+    if geometria.geom_type == "Polygon":
+        agregar_poligono(list(geometria.exterior.coords))
     elif geometria.geom_type == "MultiPolygon":
         for poly in geometria.geoms:
-            coords = list(poly.exterior.coords)
-            lons, lats = zip(*coords)
-            fig_mapa_geo.add_trace(go.Scattermapbox(
-                lon=lons,
-                lat=lats,
-                mode="lines",
-                fill="toself",
-                fillcolor="rgba(0, 0, 255, 0.2)",
-                line=dict(width=2, color="blue"),
-                name="Hubs MasAgro",
-                legendgroup="Hubs MasAgro",
-                showlegend=(i == 0)
-            ))
+            agregar_poligono(list(poly.exterior.coords))
 
 # --- Layout ---
 fig_mapa_geo.update_layout(

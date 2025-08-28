@@ -167,6 +167,26 @@ if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
 
 
+# --- Filtro por HUB Agroecológico ---
+with st.sidebar.expander("HUB Agroecológico"):
+    hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
+
+    # Checkbox para seleccionar/deseleccionar todos
+    seleccionar_todos = st.checkbox("Seleccionar todos los HUBs", value=True, key="select_all_hubs")
+
+    if seleccionar_todos:
+        seleccion_hub = hubs  # Si está marcado, se seleccionan todos
+    else:
+        seleccion_hub = checkbox_list("Selecciona HUB", hubs, "hub")
+
+    if seleccion_hub:
+        datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hub)]
+
+# Reset de filtros
+if st.session_state.limpiar_filtros:
+    st.session_state.limpiar_filtros = False
+
+
 
 
 # Filtro por Año

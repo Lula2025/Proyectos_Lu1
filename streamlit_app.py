@@ -297,6 +297,47 @@ if seleccion_cultivos:
 #----temina para cultivos
 
 
+# --- Resumen automático de filtros activos ---
+filtros_activos = {}
+
+# Categoría del Proyecto
+if categoria_seleccionada != "Todas":
+    filtros_activos["Categoría del Proyecto"] = categoria_seleccionada
+else:
+    filtros_activos["Categoría del Proyecto"] = "Todas"
+
+# Proyectos
+if proyectos_seleccionados:
+    filtros_activos["Proyectos"] = ", ".join(proyectos_seleccionados)
+else:
+    filtros_activos["Proyectos"] = "Todos"
+
+# Ciclo
+filtros_activos["Ciclos"] = ", ".join(seleccion_ciclos) if seleccion_ciclos else "Todos"
+
+# Tipo de Parcela
+filtros_activos["Tipo de Parcela"] = ", ".join(seleccion_tipos_parcela) if seleccion_tipos_parcela else "Todos"
+
+# Estado
+filtros_activos["Estados"] = ", ".join(seleccion_estados) if seleccion_estados else "Todos"
+
+# HUB Agroecológico
+filtros_activos["HUBs Agroecológicos"] = ", ".join(seleccion_hubs) if seleccion_hubs else "Todos"
+
+# Año
+filtros_activos["Años"] = ", ".join(map(str, seleccion_anio)) if seleccion_anio else "Todos"
+
+# Cultivo Principal
+filtros_activos["Cultivos"] = ", ".join(seleccion_cultivos) if seleccion_cultivos else "Todos"
+
+# Mostrar resumen
+st.markdown("### 📄 Filtros aplicados:")
+for nombre, valores in filtros_activos.items():
+    st.markdown(f"**{nombre}:** {valores}")
+
+
+
+
 
 # --- Resumen de cifras totales ---
 st.markdown("### Informe de acuerdo a los Datos Filtrados")

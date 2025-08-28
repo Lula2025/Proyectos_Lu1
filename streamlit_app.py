@@ -105,109 +105,101 @@ def normalizar_texto(texto):
 # --- Diccionario de mapas de cultivos (ejemplo) ---
 mapa_cultivos = {}  # Completa con tus equivalencias si aplica
 
-# --- Sidebar de filtros encadenados ---
+# --- Sidebar de filtros encadenados mejorado ---
 st.sidebar.header(" 🔽 Filtros")
 
-# Función para listas de checkboxes con seleccionar todos
+# Función para checkboxes con opción de seleccionar todos
 def checkbox_list(label, opciones, prefix):
-    seleccionadas = []
-    select_all_key = f"{prefix}_all"
-    select_all = st.checkbox(f"Seleccionar todas las opciones de {label}", value=True, key=select_all_key)
+    """Crea un grupo de checkboxes con opción de seleccionar todo"""
+    st.sidebar.markdown(f"**{label}**")
+    seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
     
+    seleccionadas = []
     for o in opciones:
+        default_value = seleccionar_todos
         key_name = f"{prefix}_{str(o)}"
-        checked = select_all
-        if st.checkbox(str(o), value=checked, key=key_name):
+        if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
             seleccionadas.append(o)
-    return seleccionadas, select_all
+    return seleccionadas, seleccionar_todos
 
-# --- Filtrado por Categoría de Proyecto ---
-if "Categoria_Proyecto" in datos_filtrados.columns:
-    categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
-    seleccion_categorias, todas_categorias = checkbox_list("Categoría de Proyecto", categorias, "categoria")
-    if seleccion_categorias:
-        datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
-else:
-    seleccion_categorias, todas_categorias = [], True
+# Inicializar filtros
+datos_filtrados = datos.copy()
 
-# --- Filtrado por Proyecto ---
-if "Proyecto" in datos_filtrados.columns and seleccion_categorias:
-    proyectos = sorted(datos_filtrados["Proyecto"].unique())
-    seleccion_proyectos, todos_proyectos = checkbox_list("Proyectos", proyectos, "proyecto")
-    if seleccion_proyectos:
-        datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
-else:
-    seleccion_proyectos, todos_proyectos = [], True
+# --- Filtro por Categoría del Proyecto ---
+categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
+seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
+if seleccion_categorias and not todos_categorias:
+    datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
 
-# --- Filtrado por Ciclo ---
-if "Ciclo" in datos_filtrados.columns:
-    ciclos = sorted(datos_filtrados["Ciclo"].unique())
-    seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
-    if seleccion_ciclos:
-        datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
-else:
-    seleccion_ciclos, todos_ciclos = [], True
+# --- Filtro por Proyecto ---
+proyectos = sorted(datos_filtrados["Proyecto"].unique())
+seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
+if seleccion_proyectos and not todos_proyectos:
+    datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
 
-# --- Filtrado por Tipo de Parcela ---
-if "Tipo_parcela" in datos_filtrados.columns:
-    tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
-    seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
-    if seleccion_tipos_parcela:
-        datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
-else:
-    seleccion_tipos_parcela, todos_tipos_parcela = [], True
+# --- Filtro por Ciclo ---
+ciclos = sorted(datos_filtrados["Ciclo"].unique())
+seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
+if seleccion_ciclos and not todos_ciclos:
+    datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
-# --- Filtrado por Estado ---
-if "Estado" in datos_filtrados.columns:
-    estados = sorted(datos_filtrados["Estado"].unique())
-    seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
-    if seleccion_estados:
-        datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
-else:
-    seleccion_estados, todos_estados = [], True
+# --- Filtro por Tipo de Parcela ---
+tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
+seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
+if seleccion_tipos_parcela and not todos_tipos_parcela:
+    datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
-# --- Filtrado por Año ---
-if "Anio" in datos_filtrados.columns:
-    anios = sorted(datos_filtrados["Anio"].dropna().unique())
-    seleccion_anio, todos_anios = checkbox_list("Año", anios, "anio")
-    if seleccion_anio:
-        datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
-else:
-    seleccion_anio, todos_anios = [], True
+# --- Filtro por Estado ---
+estados = sorted(datos_filtrados["Estado"].unique())
+seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
+if seleccion_estados and not todos_estados:
+    datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
-# --- Filtrado por Cultivo Principal ---
-if "Cultivo_Principal" in datos_filtrados.columns:
-    datos_filtrados["Cultivo_Normalizado"] = (
-        datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto).replace(mapa_cultivos)
-    )
-    cultivos = sorted(datos_filtrados["Cultivo_Normalizado"].unique())
-    seleccion_cultivos, todos_cultivos = checkbox_list("Cultivo Principal", cultivos, "cultivo")
-    if seleccion_cultivos:
-        datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
-else:
-    seleccion_cultivos, todos_cultivos = [], True
+# --- Filtro por HUB Agroecológico ---
+hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
+seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
+if seleccion_hubs and not todos_hubs:
+    datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
-# --- Mostrar resumen de filtros aplicados ---
+# --- Filtro por Año ---
+opciones_anio = sorted(datos_filtrados["Anio"].unique())
+seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
+if seleccion_anio and not todos_anio:
+    datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
+
+# --- Filtro por Cultivos ---
+datos_filtrados["Cultivo_Normalizado"] = (
+    datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto).replace(mapa_cultivos)
+)
+opciones_cultivo = sorted(datos_filtrados["Cultivo_Normalizado"].unique())
+seleccion_cultivos, todos_cultivos = checkbox_list("Cultivo Principal", opciones_cultivo, "cultivo")
+if seleccion_cultivos and not todos_cultivos:
+    datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
+
+# --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
-
 filtros_texto = []
 
-# Función para mostrar “Todos” si todas las opciones están seleccionadas
-def texto_filtro(nombre, seleccionadas, todas):
-    if todas or len(seleccionadas) == 0:
-        return f"**{nombre}:** Todos"
-    else:
-        return f"**{nombre}:** {', '.join(map(str, seleccionadas))}"
+def mostrar_filtro(nombre, seleccion, todos):
+    if todos:
+        filtros_texto.append(f"**{nombre}:** Todos")
+    elif seleccion:
+        filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
 
-filtros_texto.append(texto_filtro("Categoría", seleccion_categorias, todas_categorias))
-filtros_texto.append(texto_filtro("Proyectos", seleccion_proyectos, todos_proyectos))
-filtros_texto.append(texto_filtro("Ciclos", seleccion_ciclos, todos_ciclos))
-filtros_texto.append(texto_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela))
-filtros_texto.append(texto_filtro("Estados", seleccion_estados, todos_estados))
-filtros_texto.append(texto_filtro("Años", seleccion_anio, todos_anios))
-filtros_texto.append(texto_filtro("Cultivos", seleccion_cultivos, todos_cultivos))
+mostrar_filtro("Categoría", seleccion_categorias, todos_categorias)
+mostrar_filtro("Proyectos", seleccion_proyectos, todos_proyectos)
+mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
+mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
+mostrar_filtro("Estados", seleccion_estados, todos_estados)
+mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, todos_hubs)
+mostrar_filtro("Años", seleccion_anio, todos_anio)
+mostrar_filtro("Cultivos", seleccion_cultivos, todos_cultivos)
 
-st.markdown("\n".join(filtros_texto))
+if filtros_texto:
+    st.markdown("\n".join(filtros_texto))
+else:
+    st.markdown("No se aplicaron filtros, se muestran todos los datos.")
+
 
 
 

@@ -189,17 +189,27 @@ with st.sidebar.expander("Año"):
 
 # --- Filtro por Cultivos ---
 
+# --- Normalizar Cultivo_Principal para filtros ---
+datos_filtrados["Cultivo_Normalizado"] = (
+    datos_filtrados["Cultivo_Principal"]
+    .astype(str)
+    .apply(normalizar_texto)
+    .replace(mapa_cultivos)
+)
 
 with st.sidebar.expander("Cultivo Principal"):
     opciones_cultivo = sorted(set(datos_filtrados["Cultivo_Normalizado"]))
+
     seleccionar_todos_cultivos = st.checkbox("Seleccionar todos los cultivos", value=True)
+
     seleccion_cultivos = []
     for cultivo in opciones_cultivo:
         checked = seleccionar_todos_cultivos
         if st.checkbox(cultivo, value=checked, key=f"cultivo_{cultivo}"):
             seleccion_cultivos.append(cultivo)
-    if seleccion_cultivos:
-        datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
+
+if seleccion_cultivos:
+    datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
 
 #----temina para cultivos
 

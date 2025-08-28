@@ -189,13 +189,6 @@ with st.sidebar.expander("Año"):
 
 # --- Filtro por Cultivos ---
 
-# --- Normalizar Cultivo_Principal para filtros ---
-datos_filtrados["Cultivo_Normalizado"] = (
-    datos_filtrados["Cultivo_Principal"]
-    .astype(str)
-    .apply(normalizar_texto)
-    .replace(mapa_cultivos)
-)
 
 with st.sidebar.expander("Cultivo Principal"):
     opciones_cultivo = sorted(set(datos_filtrados["Cultivo_Normalizado"]))

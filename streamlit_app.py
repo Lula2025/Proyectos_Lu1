@@ -582,9 +582,48 @@ parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
 mexico_center = {"lat": 23.0, "lon": -102.0}
 
-# --- Leer shapefile de HubsMasAgro ---
-hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")  
-hubs = hubs.to_crs(epsg=4326)  # asegurar coordenadas en lat/lon
+
+# --- Cargar shapefile ---
+hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
+
+# --- Agregar capa de polígonos ---
+for i, row in hubs.iterrows():
+    geometria = row.geometry
+    
+    # Polygon
+    if geometria.geom_type == "Polygon":
+        coords = list(geometria.exterior.coords)
+        lons, lats = zip(*coords)
+        fig_mapa_geo.add_trace(go.Scattermapbox(
+            lon=lons,
+            lat=lats,
+            mode="lines",
+            fill="toself",
+            fillcolor="rgba(0, 0, 255, 0.2)",  # azul semitransparente
+            line=dict(width=2, color="blue"),
+            name="Hubs MasAgro",
+            legendgroup="Hubs MasAgro",
+            showlegend=(i == 0)  # 🔹 solo el primero aparece en la leyenda
+        ))
+
+    # MultiPolygon
+    elif geometria.geom_type == "MultiPolygon":
+        for poly in geometria.geoms:
+            coords = list(poly.exterior.coords)
+            lons, lats = zip(*coords)
+            fig_mapa_geo.add_trace(go.Scattermapbox(
+                lon=lons,
+                lat=lats,
+                mode="lines",
+                fill="toself",
+                fillcolor="rgba(0, 0, 255, 0.2)",
+                line=dict(width=2, color="blue"),
+                name="Hubs MasAgro",
+                legendgroup="Hubs MasAgro",
+                showlegend=(i == 0)
+            ))
+
+
 
 # --- Crear mapa de parcelas ---
 fig_mapa_geo = px.scatter_mapbox(

@@ -577,55 +577,12 @@ parcelas_geo = (
 # Renombrar a "Cultivo(s)"
 parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
+
+
 # --- Crear mapa ---
-
-
 mexico_center = {"lat": 23.0, "lon": -102.0}
 
-
-# --- Cargar shapefile ---
-hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
-
-# --- Agregar capa de polígonos ---
-for i, row in hubs.iterrows():
-    geometria = row.geometry
-    
-    # Polygon
-    if geometria.geom_type == "Polygon":
-        coords = list(geometria.exterior.coords)
-        lons, lats = zip(*coords)
-        fig_mapa_geo.add_trace(go.Scattermapbox(
-            lon=lons,
-            lat=lats,
-            mode="lines",
-            fill="toself",
-            fillcolor="rgba(0, 0, 255, 0.2)",  # azul semitransparente
-            line=dict(width=2, color="blue"),
-            name="Hubs MasAgro",
-            legendgroup="Hubs MasAgro",
-            showlegend=(i == 0)  # 🔹 solo el primero aparece en la leyenda
-        ))
-
-    # MultiPolygon
-    elif geometria.geom_type == "MultiPolygon":
-        for poly in geometria.geoms:
-            coords = list(poly.exterior.coords)
-            lons, lats = zip(*coords)
-            fig_mapa_geo.add_trace(go.Scattermapbox(
-                lon=lons,
-                lat=lats,
-                mode="lines",
-                fill="toself",
-                fillcolor="rgba(0, 0, 255, 0.2)",
-                line=dict(width=2, color="blue"),
-                name="Hubs MasAgro",
-                legendgroup="Hubs MasAgro",
-                showlegend=(i == 0)
-            ))
-
-
-
-# --- Crear mapa de parcelas ---
+# --- Crear mapa base con parcelas ---
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
@@ -650,40 +607,54 @@ fig_mapa_geo = px.scatter_mapbox(
 # Ajustar puntos
 fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 
-# --- Agregar HubsMasAgro como capa poligonal ---
-for _, row in hubs.iterrows():
-    coords = row["geometry"].__geo_interface__["coordinates"]
-    
-    if row["geometry"].geom_type == "MultiPolygon":
-        for poly in coords:
-            fig_mapa_geo.add_trace(go.Scattermapbox(
-                lon=[c[0] for c in poly[0]],
-                lat=[c[1] for c in poly[0]],
-                mode="lines",
-                line=dict(width=2, color="royalblue"),
-                name="Hubs MasAgro",
-                visible="legendonly"
-            ))
-    else:
+# --- Cargar shapefile de Hubs ---
+hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
+
+# --- Agregar polígonos de Hubs ---
+for i, row in hubs.iterrows():
+    geometria = row.geometry
+
+    # Polygon
+    if geometria.geom_type == "Polygon":
+        coords = list(geometria.exterior.coords)
+        lons, lats = zip(*coords)
         fig_mapa_geo.add_trace(go.Scattermapbox(
-            lon=[c[0] for c in coords[0]],
-            lat=[c[1] for c in coords[0]],
+            lon=lons,
+            lat=lats,
             mode="lines",
-            line=dict(width=2, color="royalblue"),
+            fill="toself",
+            fillcolor="rgba(0, 0, 255, 0.2)",  # semitransparente
+            line=dict(width=2, color="blue"),
             name="Hubs MasAgro",
-            visible="legendonly"
+            legendgroup="Hubs MasAgro",
+            showlegend=(i == 0)  # 🔹 solo se muestra 1 vez en la leyenda
         ))
 
-# Layout
+    # MultiPolygon
+    elif geometria.geom_type == "MultiPolygon":
+        for poly in geometria.geoms:
+            coords = list(poly.exterior.coords)
+            lons, lats = zip(*coords)
+            fig_mapa_geo.add_trace(go.Scattermapbox(
+                lon=lons,
+                lat=lats,
+                mode="lines",
+                fill="toself",
+                fillcolor="rgba(0, 0, 255, 0.2)",
+                line=dict(width=2, color="blue"),
+                name="Hubs MasAgro",
+                legendgroup="Hubs MasAgro",
+                showlegend=(i == 0)
+            ))
+
+# --- Layout ---
 fig_mapa_geo.update_layout(
     mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4.5),
-    margin={"l":0,"r":0,"t":50,"b":0},
-    legend=dict(y=-0.1)  # baja un poco la leyenda
+    margin={"l":0,"r":0,"t":50,"b":0}
 )
 
-# Mostrar mapa en Streamlit
+# Mostrar en Streamlit
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

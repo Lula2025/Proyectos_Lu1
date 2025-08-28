@@ -557,7 +557,7 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
     # Mostrar tabla pivote
     st.dataframe(tabla_pivote, use_container_width=True)
 
-
+#----------------------------------
 # --- Preparar datos ---
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
@@ -589,7 +589,7 @@ colores_parcelas = parcelas_geo["Tipo de sistema"].map(colores_sistema_dict)
 # --- Crear figura base ---
 fig_mapa_geo = go.Figure()
 
-# --- Agregar parcelas ---
+# --- Agregar parcelas con tooltip solo de Cultivo(s) ---
 fig_mapa_geo.add_trace(go.Scattermapbox(
     lat=parcelas_geo["Latitud"],
     lon=parcelas_geo["Longitud"],
@@ -602,10 +602,11 @@ fig_mapa_geo.add_trace(go.Scattermapbox(
         showscale=False
     ),
     text=parcelas_geo["Cultivo(s)"],
+    hovertemplate="<b>%{text}</b><extra></extra>",  # solo muestra Cultivo(s)
     name="Parcelas"
 ))
 
-# --- Cargar shapefile de Hubs y simplificar geometría ---
+# --- Cargar y simplificar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 hubs["geometry"] = hubs["geometry"].simplify(tolerance=0.01, preserve_topology=True)
 
@@ -658,9 +659,14 @@ for i, row in hubs.iterrows():
 
 # --- Layout final ---
 fig_mapa_geo.update_layout(
-    mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4.5),
+    mapbox=dict(
+        center={"lat": 23.0, "lon": -102.0},
+        zoom=4.0  # ajustar para mostrar todo México
+    ),
     margin={"l":0,"r":0,"t":50,"b":0},
-    mapbox_style="carto-positron"
+    mapbox_style="carto-positron",
+    height=900,  # más alto y cuadrado
+    width=900
 )
 
 # --- Mostrar en Streamlit ---

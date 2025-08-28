@@ -215,9 +215,11 @@ total_productores = datos_filtrados["Id_Productor"].nunique() if "Id_Productor" 
 
 col_r1, col_r2, col_r3, col_r4 = st.columns(4)
 col_r1.metric("📋 Total de Bitácoras", f"{total_bitacoras:,}")
-col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}"))
+col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}")
 col_r3.metric("🌄 Número de Parcelas Totales", f"{total_parcelas:,}")
 col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
+
+
 
 st.markdown("---")  # Esta es la línea de separación
 

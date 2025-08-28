@@ -161,29 +161,31 @@ with st.sidebar.expander("HUB Agroecológico"):
 
     # Checkbox para seleccionar/deseleccionar todos
     seleccionar_todos = st.checkbox(
-        "Seleccionar todos los HUBs", 
+        "Seleccionar todos los HUBs",
         value=len(st.session_state.seleccion_hubs) == len(hubs)
     )
 
+    if seleccionar_todos:
+        st.session_state.seleccion_hubs = hubs  # marcar todos
+    else:
+        st.session_state.seleccion_hubs = []    # desmarcar todos
+
+    # Mostrar la lista de checkboxes individuales
     seleccion_hubs = []
     for hub in hubs:
-        # Si está marcado "Seleccionar todos", todos los checkboxes se muestran activos
-        if seleccionar_todos:
-            seleccionado = True
-        else:
-            seleccionado = hub in st.session_state.seleccion_hubs
-
+        # Se refleja el estado de st.session_state.seleccion_hubs
+        seleccionado = hub in st.session_state.seleccion_hubs
         if st.checkbox(hub, value=seleccionado, key=f"hub_{hub}"):
             seleccion_hubs.append(hub)
 
-    # Actualizar estado con la selección final
+    # Guardar la selección final
     st.session_state.seleccion_hubs = seleccion_hubs
 
     # Aplicar filtro
     if seleccion_hubs:
         datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
-# Reset si se limpian los filtros
+# Reset si se limpian filtros
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
     st.session_state.seleccion_hubs = hubs

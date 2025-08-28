@@ -202,6 +202,7 @@ def mostrar_filtro(nombre, seleccion, todos):
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
 
 mostrar_filtro("Categoría", seleccion_categorias, todos_categorias)
+
 mostrar_filtro("Proyectos", seleccion_proyectos, todos_proyectos)
 mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
 mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)

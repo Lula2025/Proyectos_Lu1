@@ -148,46 +148,44 @@ with st.sidebar.expander("Estado"):
         datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 
-# --- Filtro por HUB Agroecológico ---
+
+
+
+# --- Filtro por HUB_Agroecológico ---
 with st.sidebar.expander("HUB Agroecológico"):
     hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
-
-    # Checkbox para seleccionar/deseleccionar todos
-    seleccionar_todos = st.checkbox("Seleccionar todos los HUBs", value=True, key="select_all_hubs")
-
-    if seleccionar_todos:
-        seleccion_hub = hubs  # Si está marcado, se seleccionan todos
+    
+    # Inicializar estado si no existe
+    if "seleccion_hubs" not in st.session_state:
+        st.session_state.seleccion_hubs = hubs  # por defecto todos seleccionados
+    
+    # Casilla para seleccionar/deseleccionar todos
+    seleccionar_todos_hubs = st.checkbox(
+        "Seleccionar todos los HUBs", 
+        value=len(st.session_state.seleccion_hubs) == len(hubs),
+        key="seleccionar_todos_hubs"
+    )
+    
+    # Lista de checkboxes individuales
+    seleccion_hubs = []
+    if seleccionar_todos_hubs:
+        seleccion_hubs = hubs
     else:
-        seleccion_hub = checkbox_list("Selecciona HUB", hubs, "hub")
+        for hub in hubs:
+            if st.checkbox(hub, value=hub in st.session_state.seleccion_hubs, key=f"hub_{hub}"):
+                seleccion_hubs.append(hub)
 
-    if seleccion_hub:
-        datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hub)]
+    # Guardar selección en el estado
+    st.session_state.seleccion_hubs = seleccion_hubs
+    
+    # Aplicar filtro si hay selección
+    if seleccion_hubs:
+        datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
-# Reset de filtros
+# Reset si se limpia todo
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
-
-
-
-
-# Filtro por Régimen Hídrico
-
-cambios_regimen = {
-    "RIEGO": "Riego",
-    "TEMPORAL": "Temporal",
-}
-
-# Normalizar la columna correcta
-datos_filtrados["Tipo_Regimen_Hidrico"] = datos_filtrados["Tipo_Regimen_Hidrico"].replace(cambios_regimen)
-
-with st.sidebar.expander("Régimen Hídrico"):
-    regimenes = sorted(datos_filtrados["Tipo_Regimen_Hidrico"].unique())
-    seleccion_regimen = checkbox_list("Régimen", regimenes, "regimen")
-    if seleccion_regimen:
-        datos_filtrados = datos_filtrados[datos_filtrados["Tipo_Regimen_Hidrico"].isin(seleccion_regimen)]
-
-if st.session_state.limpiar_filtros:
-    st.session_state.limpiar_filtros = False
+    st.session_state.seleccion_hubs = hubs
 
 
 

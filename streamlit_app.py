@@ -610,14 +610,14 @@ fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
-# --- Crear diccionario de colores por categoría ---
-categorias = hubs["Categoria"].unique()  # cambia "Categoria" al nombre de tu columna
-colores = {cat: f'rgba({random.randint(0,255)},{random.randint(0,255)},{random.randint(0,255)},0.3)' for cat in categorias}
+# --- Crear diccionario de colores por SIGLA ---
+siglas = hubs["SIGLA"].unique()
+colores = {sigla: f'rgba({random.randint(0,255)},{random.randint(0,255)},{random.randint(0,255)},0.3)' for sigla in siglas}
 
 # --- Agregar polígonos de Hubs ---
 for i, row in hubs.iterrows():
-    categoria = row["Categoria"]  # nombre de la categoría
-    color = colores[categoria]
+    sigla = row["SIGLA"]
+    color = colores[sigla]
     geometria = row.geometry
 
     def agregar_poligono(poly_coords):
@@ -628,9 +628,9 @@ for i, row in hubs.iterrows():
             mode="lines",
             fill="toself",
             fillcolor=color,
-            line=dict(width=2, color=color.replace("0.3","1")),  # borde más visible
-            name=categoria,
-            legendgroup=categoria,
+            line=dict(width=2, color=color.replace("0.3","1")),
+            name=sigla,
+            legendgroup=sigla,
             showlegend=True
         ))
 

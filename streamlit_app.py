@@ -563,6 +563,7 @@ datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="c
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
+# Agrupar por coordenadas y tipo de sistema
 parcelas_geo = (
     datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
     .agg(
@@ -574,33 +575,35 @@ parcelas_geo = (
 
 parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
-# --- Crear mapa base con parcelas ---
-fig_mapa_geo = px.scatter_mapbox(
-    parcelas_geo,
-    lat="Latitud",
-    lon="Longitud",
-    size="Parcelas",
-    color="Tipo de sistema",
-    hover_name="Tipo de sistema",
-    hover_data={
-        "Cultivo(s)": True,
-        "Latitud": False,
-        "Longitud": False,
-        "Parcelas": False
-    },
-    mapbox_style="carto-positron",
-    center={"lat": 23.0, "lon": -102.0},
-    zoom=4.5,
-    height=700,
-    width=700,
-    title="📍 Distribución Geográfica de Parcelas por Tipo de Sistema"
-)
+# --- Opcional: muestrear parcelas si hay demasiadas ---
+max_puntos = 3000
+if len(parcelas_geo) > max_puntos:
+    parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
 
-fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
+# --- Crear figura base ---
+fig_mapa_geo = go.Figure()
 
-# --- Cargar shapefile de Hubs ---
+# --- Agregar parcelas ---
+fig_mapa_geo.add_trace(go.Scattermapbox(
+    lat=parcelas_geo["Latitud"],
+    lon=parcelas_geo["Longitud"],
+    mode="markers",
+    marker=dict(
+        size=parcelas_geo["Parcelas"]*2,  # ajustar tamaño si quieres
+        sizemode="area",
+        sizemin=4,
+        color=parcelas_geo["Tipo de sistema"],
+        showscale=False
+    ),
+    text=parcelas_geo["Cultivo(s)"],
+    name="Parcelas"
+))
+
+# --- Cargar y simplificar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
+hubs["geometry"] = hubs["geometry"].simplify(tolerance=0.01, preserve_topology=True)
 
+# Colores predefinidos
 colores_predefinidos = [
     "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
     "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
@@ -614,10 +617,10 @@ def hex_to_rgba(hex_color, alpha=0.3):
 
 colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(hubs["SIGLA"].unique())}
 
-# --- Conjunto para controlar leyenda ---
+# --- Control de leyenda ---
 leyenda_mostrada = set()
 
-# --- Agregar polígonos de Hubs a la figura existente ---
+# --- Agregar polígonos de Hubs ---
 for i, row in hubs.iterrows():
     sigla = row["SIGLA"]
     color = colores[sigla]
@@ -647,13 +650,14 @@ for i, row in hubs.iterrows():
         for poly in geometria.geoms:
             agregar_poligono(list(poly.exterior.coords))
 
-# --- Ajustes finales ---
+# --- Layout final ---
 fig_mapa_geo.update_layout(
     mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4.5),
     margin={"l":0,"r":0,"t":50,"b":0},
     mapbox_style="carto-positron"
 )
 
+# --- Mostrar en Streamlit ---
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 # -----------------------------------

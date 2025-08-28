@@ -154,35 +154,36 @@ with st.sidebar.expander("Estado"):
 # --- Filtro por HUB_Agroecológico ---
 with st.sidebar.expander("HUB Agroecológico"):
     hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
-    
+
     # Inicializar estado si no existe
     if "seleccion_hubs" not in st.session_state:
         st.session_state.seleccion_hubs = hubs  # por defecto todos seleccionados
-    
-    # Casilla para seleccionar/deseleccionar todos
-    seleccionar_todos_hubs = st.checkbox(
-        "Seleccionar todos los HUBs", 
-        value=len(st.session_state.seleccion_hubs) == len(hubs),
-        key="seleccionar_todos_hubs"
-    )
-    
-    # Lista de checkboxes individuales
-    seleccion_hubs = []
-    if seleccionar_todos_hubs:
-        seleccion_hubs = hubs
-    else:
-        for hub in hubs:
-            if st.checkbox(hub, value=hub in st.session_state.seleccion_hubs, key=f"hub_{hub}"):
-                seleccion_hubs.append(hub)
 
-    # Guardar selección en el estado
+    # Checkbox para seleccionar/deseleccionar todos
+    seleccionar_todos = st.checkbox(
+        "Seleccionar todos los HUBs", 
+        value=len(st.session_state.seleccion_hubs) == len(hubs)
+    )
+
+    seleccion_hubs = []
+    for hub in hubs:
+        # Si está marcado "Seleccionar todos", todos los checkboxes se muestran activos
+        if seleccionar_todos:
+            seleccionado = True
+        else:
+            seleccionado = hub in st.session_state.seleccion_hubs
+
+        if st.checkbox(hub, value=seleccionado, key=f"hub_{hub}"):
+            seleccion_hubs.append(hub)
+
+    # Actualizar estado con la selección final
     st.session_state.seleccion_hubs = seleccion_hubs
-    
-    # Aplicar filtro si hay selección
+
+    # Aplicar filtro
     if seleccion_hubs:
         datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
-# Reset si se limpia todo
+# Reset si se limpian los filtros
 if st.session_state.limpiar_filtros:
     st.session_state.limpiar_filtros = False
     st.session_state.seleccion_hubs = hubs

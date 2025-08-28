@@ -558,13 +558,11 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
     st.dataframe(tabla_pivote, use_container_width=True)
 
 
-
 # --- Preparar datos ---
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# --- Agrupar por coordenadas y Tipo de sistema ---
 parcelas_geo = (
     datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
     .agg(
@@ -574,13 +572,7 @@ parcelas_geo = (
     .reset_index()
 )
 
-# Renombrar a "Cultivo(s)"
 parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
-
-
-
-# --- Crear mapa ---
-mexico_center = {"lat": 23.0, "lon": -102.0}
 
 # --- Crear mapa base con parcelas ---
 fig_mapa_geo = px.scatter_mapbox(
@@ -604,36 +596,28 @@ fig_mapa_geo = px.scatter_mapbox(
     title="📍 Distribución Geográfica de Parcelas por Tipo de Sistema"
 )
 
-# Ajustar puntos
 fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
-# --- Lista de colores predefinidos ---
 colores_predefinidos = [
     "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
     "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
     "#FFB6C1", "#C2C2F0"
 ]
 
-# --- Función para convertir hex a rgba ---
 def hex_to_rgba(hex_color, alpha=0.3):
     hex_color = hex_color.lstrip('#')
     r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
     return f'rgba({r},{g},{b},{alpha})'
 
-# --- Diccionario de colores por SIGLA ---
-siglas = hubs["SIGLA"].unique()
-colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(siglas)}
-
-# --- Inicializar figura ---
-fig_mapa_geo = go.Figure()
+colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(hubs["SIGLA"].unique())}
 
 # --- Conjunto para controlar leyenda ---
 leyenda_mostrada = set()
 
-# --- Agregar polígonos ---
+# --- Agregar polígonos de Hubs a la figura existente ---
 for i, row in hubs.iterrows():
     sigla = row["SIGLA"]
     color = colores[sigla]
@@ -663,16 +647,14 @@ for i, row in hubs.iterrows():
         for poly in geometria.geoms:
             agregar_poligono(list(poly.exterior.coords))
 
-# --- Layout ---
+# --- Ajustes finales ---
 fig_mapa_geo.update_layout(
     mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4.5),
     margin={"l":0,"r":0,"t":50,"b":0},
     mapbox_style="carto-positron"
 )
 
-# --- Mostrar en Streamlit ---
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

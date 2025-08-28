@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import zipfile
 import unicodedata
+import geopandas as gpd
+import plotly.graph_objects as go
+
 
 # --- Configuración inicial de la página ---
 st.set_page_config(
@@ -556,8 +559,6 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
 
 
-
-
 # --- Preparar datos ---
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
@@ -581,6 +582,11 @@ parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
 mexico_center = {"lat": 23.0, "lon": -102.0}
 
+# --- Leer shapefile de HubsMasAgro ---
+hubs = gpd.read_file("HubsMasAgro/HubsMasAgro.shp")  
+hubs = hubs.to_crs(epsg=4326)  # asegurar coordenadas en lat/lon
+
+# --- Crear mapa de parcelas ---
 fig_mapa_geo = px.scatter_mapbox(
     parcelas_geo,
     lat="Latitud",
@@ -589,7 +595,7 @@ fig_mapa_geo = px.scatter_mapbox(
     color="Tipo de sistema",
     hover_name="Tipo de sistema",
     hover_data={
-        "Cultivo(s)": True,  # ahora sí viene del campo original
+        "Cultivo(s)": True,
         "Latitud": False,
         "Longitud": False,
         "Parcelas": False
@@ -605,15 +611,39 @@ fig_mapa_geo = px.scatter_mapbox(
 # Ajustar puntos
 fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 
+# --- Agregar HubsMasAgro como capa poligonal ---
+for _, row in hubs.iterrows():
+    coords = row["geometry"].__geo_interface__["coordinates"]
+    
+    if row["geometry"].geom_type == "MultiPolygon":
+        for poly in coords:
+            fig_mapa_geo.add_trace(go.Scattermapbox(
+                lon=[c[0] for c in poly[0]],
+                lat=[c[1] for c in poly[0]],
+                mode="lines",
+                line=dict(width=2, color="royalblue"),
+                name="Hubs MasAgro",
+                visible="legendonly"
+            ))
+    else:
+        fig_mapa_geo.add_trace(go.Scattermapbox(
+            lon=[c[0] for c in coords[0]],
+            lat=[c[1] for c in coords[0]],
+            mode="lines",
+            line=dict(width=2, color="royalblue"),
+            name="Hubs MasAgro",
+            visible="legendonly"
+        ))
+
 # Layout
 fig_mapa_geo.update_layout(
-    mapbox=dict(center=mexico_center, zoom=4.5, bearing=0, pitch=0),
-    margin={"l":0,"r":0,"t":50,"b":0}
+    mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4.5),
+    margin={"l":0,"r":0,"t":50,"b":0},
+    legend=dict(y=-0.1)  # baja un poco la leyenda
 )
 
 # Mostrar mapa en Streamlit
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 
 # -----------------------------------

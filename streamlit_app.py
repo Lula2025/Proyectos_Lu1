@@ -202,7 +202,6 @@ def mostrar_filtro(nombre, seleccion, todos):
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
 
 mostrar_filtro("Categoría", seleccion_categorias, todos_categorias)
-
 mostrar_filtro("Proyectos", seleccion_proyectos, todos_proyectos)
 mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
 mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
@@ -212,7 +211,7 @@ mostrar_filtro("Años", seleccion_anio, todos_anio)
 mostrar_filtro("Cultivos", seleccion_cultivos, todos_cultivos)
 
 if filtros_texto:
-    st.markdown("\n".join(filtros_texto))
+    st.markdown(",  ".join(filtros_texto))
 else:
     st.markdown("No se aplicaron filtros, se muestran todos los datos.")
 

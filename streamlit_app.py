@@ -11,6 +11,32 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- Función para normalizar texto ---
+def normalizar_texto(texto):
+    if pd.isna(texto):
+        return texto
+    texto_norm = ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+    return texto_norm.strip().capitalize()
+
+# --- Mapa de normalización de cultivos ---
+mapa_cultivos = {
+    "Maiz": "Maíz",
+    "Frijol": "Frijol",
+    "Trigo": "Trigo",
+    "Cebada": "Cebada",
+    "Sorgo": "Sorgo",
+    "Avena": "Avena",
+    "Garbanzo": "Garbanzo",
+    "Soya": "Soya",
+    "Girasol": "Girasol",
+    "Alfalfa": "Alfalfa",
+    "Calabaza": "Calabaza",
+    "Calabacita": "Calabacita"
+}
+
 # --- Leer el archivo ZIP ---
 archivo_zip = "Archivos.2.zip"
 nombre_csv = "Datos_Historicos_cuenta_actualizacion_23_24_30052025.2.csv"
@@ -29,10 +55,8 @@ except KeyError:
 
 # --- Mostrar encabezado con imágenes ---
 col1, col2, col3 = st.columns([1, 4, 1])
-
 with col1:
     st.image("assets/cimmyt.png", use_container_width=True)
-
 with col3:
     st.image("assets/ea.png", use_container_width=True)
 
@@ -65,15 +89,12 @@ color_map_parcela = {
     "Área de extensión": "#2ca02c",  # Verde
     "Módulo": "#d62728" ,           # Rojo
 }
-#########
+
 # --- Sidebar de filtros encadenados ---
 st.sidebar.header(" 🔽 Filtros")
-
 if 'limpiar_filtros' not in st.session_state:
     st.session_state.limpiar_filtros = False
-
 select_all = st.sidebar.checkbox("✅ Seleccionar todas las opciones", value=False)
-
 
 def checkbox_list(label, opciones, prefix):
     seleccionadas = []
@@ -87,10 +108,7 @@ def checkbox_list(label, opciones, prefix):
 # Inicializar con todos los datos
 datos_filtrados = datos.copy()
 
-
-#######
-
-# --- Inicializar variables de selección para evitar errores ---
+# --- Inicializar variables de selección ---
 categoria_seleccionada = "Todas"
 proyectos_seleccionados = []
 seleccion_ciclos = []
@@ -104,19 +122,16 @@ seleccion_cultivos = []
 with st.sidebar.expander("Categoría del Proyecto"):
     categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
     categoria_seleccionada = st.selectbox("Selecciona una categoría", ["Todas"] + categorias)
-
     if categoria_seleccionada != "Todas":
         datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"] == categoria_seleccionada]
         proyectos = sorted(datos_filtrados["Proyecto"].unique())
         seleccionar_todos_proyectos = st.checkbox("Seleccionar todos los proyectos")
-
         proyectos_seleccionados = []
         for proyecto in proyectos:
             valor_default = seleccionar_todos_proyectos if not st.session_state.limpiar_filtros else False
             key_name = f"proyecto_{str(proyecto)}"
             if st.checkbox(str(proyecto), value=valor_default, key=key_name):
                 proyectos_seleccionados.append(proyecto)
-
         if proyectos_seleccionados:
             datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(proyectos_seleccionados)]
 
@@ -143,10 +158,8 @@ cambios_estados = {
     "Michoacán de Ocampo": "Michoacán",
     "Ciudad de Mexico": "Ciudad de México",
     "Veracruz de Ignacio de la Llave": "Veracruz",
-    "Coahuila de Zaragoza": "Coahuila",
 }
 datos_filtrados["Estado"] = datos_filtrados["Estado"].replace(cambios_estados)
-
 with st.sidebar.expander("Estado"):
     estados = sorted(datos_filtrados["Estado"].unique())
     seleccion_estados = checkbox_list("Estado", estados, "estado")
@@ -157,20 +170,17 @@ with st.sidebar.expander("Estado"):
 with st.sidebar.expander("HUB Agroecológico"):
     hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
     if "seleccion_hubs" not in st.session_state:
-        st.session_state.seleccion_hubs = hubs  # por defecto todos seleccionados
-
+        st.session_state.seleccion_hubs = hubs
     seleccionar_todos = st.checkbox("Seleccionar todos los HUBs", value=len(st.session_state.seleccion_hubs) == len(hubs))
     if seleccionar_todos:
         st.session_state.seleccion_hubs = hubs
     else:
         st.session_state.seleccion_hubs = []
-
     seleccion_hubs = []
     for hub in hubs:
         seleccionado = hub in st.session_state.seleccion_hubs
         if st.checkbox(hub, value=seleccionado, key=f"hub_{hub}"):
             seleccion_hubs.append(hub)
-
     st.session_state.seleccion_hubs = seleccion_hubs
     if seleccion_hubs:
         datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
@@ -187,34 +197,28 @@ with st.sidebar.expander("Año"):
     if seleccion_anio:
         datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 
-# --- Filtro por Cultivos ---
-
-# --- Normalizar Cultivo_Principal para filtros ---
+# --- Filtro por Cultivo Principal ---
 datos_filtrados["Cultivo_Normalizado"] = (
     datos_filtrados["Cultivo_Principal"]
     .astype(str)
     .apply(normalizar_texto)
     .replace(mapa_cultivos)
 )
-
 with st.sidebar.expander("Cultivo Principal"):
     opciones_cultivo = sorted(set(datos_filtrados["Cultivo_Normalizado"]))
-
     seleccionar_todos_cultivos = st.checkbox("Seleccionar todos los cultivos", value=True)
-
     seleccion_cultivos = []
     for cultivo in opciones_cultivo:
         checked = seleccionar_todos_cultivos
         if st.checkbox(cultivo, value=checked, key=f"cultivo_{cultivo}"):
             seleccion_cultivos.append(cultivo)
-
 if seleccion_cultivos:
     datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
 
 #----temina para cultivos
 
 
-# --- Resumen textual de filtros seleccionados ---
+# --- Mostrar resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
 
 filtros_texto = []

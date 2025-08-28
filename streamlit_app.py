@@ -313,12 +313,19 @@ col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
 
 st.markdown("---")  # Esta es la línea de separación
 
+
+# Asegurar que la columna Año siempre sea numérica
+datos_filtrados["Anio"] = pd.to_numeric(datos_filtrados["Anio"], errors="coerce").astype("Int64")
+
 # --- Gráficas principales ---
 col5, col6 = st.columns(2)
 
 with col5:
     color_arg = "Tipo_parcela" if seleccion_tipos_parcela else None
-    bitacoras_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"]).size().reset_index(name="Bitácoras") if color_arg else datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
+    bitacoras_por_anio = (
+        datos_filtrados.groupby(["Anio", "Tipo_parcela"]).size().reset_index(name="Bitácoras")
+        if color_arg else datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
+    )
     fig_bitacoras = px.bar(
         bitacoras_por_anio,
         x="Anio",
@@ -327,33 +334,36 @@ with col5:
         color_discrete_map=color_map_parcela if color_arg else None,
         title="📋 Número de Bitácoras por Año"
     )
-
-   # Forzar colores usando update_traces para asegurarnos de que las barras se pinten correctamente
-    fig_bitacoras.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno para mejor visibilidad
+    fig_bitacoras.update_traces(marker=dict(line=dict(color="black", width=1)))
+    fig_bitacoras.update_xaxes(tickmode="linear", dtick=1)  # ✅ forzar años enteros
     st.plotly_chart(fig_bitacoras, use_container_width=True)
 
 with col6:
-    area_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Area_total_de_la_parcela(ha)"].sum().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Area_total_de_la_parcela(ha)"].sum().reset_index()
+    area_por_anio = (
+        datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Area_total_de_la_parcela(ha)"].sum().reset_index()
+        if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Area_total_de_la_parcela(ha)"].sum().reset_index()
+    )
     fig_area = px.bar(
         area_por_anio,
         x="Anio",
         y="Area_total_de_la_parcela(ha)",
         color="Tipo_parcela" if seleccion_tipos_parcela else None,
         color_discrete_map=color_map_parcela if seleccion_tipos_parcela else None,
-        title="🌿 Área Total de Parcelas por Año ",
+        title="🌿 Área Total de Parcelas por Año",
         labels={"Area_total_de_la_parcela(ha)": "Área (ha)"}
     )
-    # Forzar colores usando update_traces para asegurar la correcta aplicación del color
-    fig_area.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno
+    fig_area.update_traces(marker=dict(line=dict(color="black", width=1)))
+    fig_area.update_xaxes(tickmode="linear", dtick=1)  # ✅
     st.plotly_chart(fig_area, use_container_width=True)
-
-
 
 col7, col8 = st.columns(2)
 
 with col7:
     if "Id_Parcela(Unico)" in datos_filtrados.columns:
-        parcelas_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Parcela(Unico)"].nunique().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Parcela(Unico)"].nunique().reset_index()
+        parcelas_por_anio = (
+            datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Parcela(Unico)"].nunique().reset_index()
+            if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Parcela(Unico)"].nunique().reset_index()
+        )
         fig_parcelas = px.bar(
             parcelas_por_anio,
             x="Anio",
@@ -363,13 +373,16 @@ with col7:
             title="🌄 Número de Parcelas por Año",
             labels={"Id_Parcela(Unico)": "Parcelas"}
         )
-        # Forzar colores usando update_traces para asegurar la correcta aplicación del color
-        fig_parcelas.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno
+        fig_parcelas.update_traces(marker=dict(line=dict(color="black", width=1)))
+        fig_parcelas.update_xaxes(tickmode="linear", dtick=1)  # ✅
         st.plotly_chart(fig_parcelas, use_container_width=True)
 
 with col8:
     if "Id_Productor" in datos_filtrados.columns:
-        productores_por_anio = datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Productor"].nunique().reset_index() if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
+        productores_por_anio = (
+            datos_filtrados.groupby(["Anio", "Tipo_parcela"])["Id_Productor"].nunique().reset_index()
+            if seleccion_tipos_parcela else datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
+        )
         fig_productores = px.bar(
             productores_por_anio,
             x="Anio",
@@ -379,9 +392,11 @@ with col8:
             title="👩‍🌾👨‍🌾 Número de Productores por Año",
             labels={"Id_Productor": "Productores"}
         )
-        # Forzar colores usando update_traces para asegurar la correcta aplicación del color
-        fig_productores.update_traces(marker=dict(line=dict(color='black', width=1)))  # Añadir contorno
+        fig_productores.update_traces(marker=dict(line=dict(color="black", width=1)))
+        fig_productores.update_xaxes(tickmode="linear", dtick=1)  # ✅
         st.plotly_chart(fig_productores, use_container_width=True)
+
+
 
 
 # --- Gráfico de distribución por género ---

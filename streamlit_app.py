@@ -87,6 +87,13 @@ def checkbox_list(label, opciones, prefix):
 # Inicializar con todos los datos
 datos_filtrados = datos.copy()
 
+# --- Normalizar Cultivo_Principal para filtros ---
+datos_filtrados["Cultivo_Normalizado"] = (
+    datos_filtrados["Cultivo_Principal"]
+    .astype(str)
+    .apply(normalizar_texto)
+    .replace(mapa_cultivos)
+)
 
 #######
 

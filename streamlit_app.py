@@ -610,10 +610,11 @@ fig_mapa_geo.update_traces(marker=dict(sizemode="area", sizeref=2, sizemin=5))
 # --- Cargar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
 
-# --- Lista de colores hexadecimales ---
+# --- Lista de colores predefinidos ---
 colores_predefinidos = [
     "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
-    "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52"
+    "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
+    "#FFB6C1", "#C2C2F0"
 ]
 
 # --- Función para convertir hex a rgba ---
@@ -626,6 +627,12 @@ def hex_to_rgba(hex_color, alpha=0.3):
 siglas = hubs["SIGLA"].unique()
 colores = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(siglas)}
 
+# --- Inicializar figura ---
+fig_mapa_geo = go.Figure()
+
+# --- Conjunto para controlar leyenda ---
+leyenda_mostrada = set()
+
 # --- Agregar polígonos ---
 for i, row in hubs.iterrows():
     sigla = row["SIGLA"]
@@ -634,16 +641,20 @@ for i, row in hubs.iterrows():
 
     def agregar_poligono(poly_coords):
         lons, lats = zip(*poly_coords)
+        show_legend = sigla not in leyenda_mostrada
+        if show_legend:
+            leyenda_mostrada.add(sigla)
+
         fig_mapa_geo.add_trace(go.Scattermapbox(
             lon=lons,
             lat=lats,
             mode="lines",
             fill="toself",
-            fillcolor=hex_to_rgba(color, 0.3),  # ✅ transparencia segura
+            fillcolor=hex_to_rgba(color, 0.3),
             line=dict(width=2, color=color),
             name=sigla,
             legendgroup=sigla,
-            showlegend=True
+            showlegend=show_legend
         ))
 
     if geometria.geom_type == "Polygon":
@@ -655,9 +666,11 @@ for i, row in hubs.iterrows():
 # --- Layout ---
 fig_mapa_geo.update_layout(
     mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4.5),
-    margin={"l":0,"r":0,"t":50,"b":0}
+    margin={"l":0,"r":0,"t":50,"b":0},
+    mapbox_style="carto-positron"
 )
 
+# --- Mostrar en Streamlit ---
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 

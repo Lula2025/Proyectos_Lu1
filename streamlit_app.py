@@ -583,7 +583,7 @@ parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 mexico_center = {"lat": 23.0, "lon": -102.0}
 
 # --- Leer shapefile de HubsMasAgro ---
-hubs = gpd.read_file("HubsMasAgro/HubsMasAgro.shp")  
+hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")  
 hubs = hubs.to_crs(epsg=4326)  # asegurar coordenadas en lat/lon
 
 # --- Crear mapa de parcelas ---

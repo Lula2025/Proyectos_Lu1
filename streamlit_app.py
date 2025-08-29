@@ -619,7 +619,7 @@ colores_predefinidos = [
     "#FFB6C1", "#C2C2F0"
 ]
 
-def hex_to_rgba(hex_color, alpha=0.6):
+def hex_to_rgba(hex_color, alpha=0.1):
     hex_color = hex_color.lstrip('#')
     r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
     return f'rgba({r},{g},{b},{alpha})'
@@ -646,7 +646,7 @@ for i, row in hubs.iterrows():
             lat=lats,
             mode="lines",
             fill="toself",
-            fillcolor=hex_to_rgba(color, 0.3),
+            fillcolor=hex_to_rgba(color, 0.1),
             line=dict(width=2, color=color),
             name=sigla,
             legendgroup=sigla,

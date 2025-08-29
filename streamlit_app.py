@@ -128,6 +128,14 @@ def checkbox_list(label, opciones, prefix):
 # Inicializar filtros
 datos_filtrados = datos.copy()
 
+# --- Filtro por HUB Agroecológico ---
+hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
+seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
+if seleccion_hubs and not todos_hubs:
+    datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
+
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
 # --- Filtro por Categoría del Proyecto ---
 categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
 seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
@@ -169,13 +177,7 @@ if seleccion_estados and not todos_estados:
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por HUB Agroecológico ---
-hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
-seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
-if seleccion_hubs and not todos_hubs:
-    datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Año ---
 opciones_anio = sorted(datos_filtrados["Anio"].unique())
@@ -617,7 +619,7 @@ colores_predefinidos = [
     "#FFB6C1", "#C2C2F0"
 ]
 
-def hex_to_rgba(hex_color, alpha=0.3):
+def hex_to_rgba(hex_color, alpha=0.2):
     hex_color = hex_color.lstrip('#')
     r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
     return f'rgba({r},{g},{b},{alpha})'

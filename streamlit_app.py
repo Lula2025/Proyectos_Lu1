@@ -221,7 +221,7 @@ else:
 
 
 # --- Resumen de cifras totales ---
-st.markdown("### Informe de acuerdo a los filtros")
+# st.markdown("### Informe de acuerdo a los filtros")
 
 total_bitacoras = len(datos_filtrados)
 total_area = datos_filtrados["Area_total_de_la_parcela(ha)"].sum()
@@ -730,7 +730,7 @@ fig_estado = px.scatter_mapbox(
     hover_data={"Parcelas": True, "Latitud": False, "Longitud": False},  
     size_max=6,  # círculos pequeños
     color_continuous_scale="Plasma",
-    zoom=4.5,
+    zoom=4.0,
     center={"lat": 23.0, "lon": -102.0},
     mapbox_style="carto-positron",
     title="📍 Número de Parcelas Atendidas por Estado"
@@ -761,6 +761,7 @@ fig_estado.update_traces(
 fig_estado.update_layout(
     margin={"l":0,"r":0,"t":50,"b":0},
     height=700,
+    width=900,
     coloraxis_colorbar=dict(
         title="Parcelas",
         tickvals=list(range(cmin, cmax + step, step)),
@@ -770,9 +771,5 @@ fig_estado.update_layout(
 
 # --- Mostrar en Streamlit ---
 st.plotly_chart(fig_estado, use_container_width=True)
-
-
-
-
 
 

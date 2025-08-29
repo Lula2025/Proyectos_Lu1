@@ -665,9 +665,10 @@ fig_mapa_geo.update_layout(
     ),
     margin={"l":0,"r":0,"t":50,"b":0},
     mapbox_style="carto-positron",
-    height=900,  # más alto y cuadrado
+    height=700,  # más alto y cuadrado
     width=900
 )
+
 
 # --- Mostrar en Streamlit ---
 st.plotly_chart(fig_mapa_geo, use_container_width=True)

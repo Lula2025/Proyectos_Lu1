@@ -187,6 +187,16 @@ if seleccion_anio and not todos_anio:
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+
+# --- Filtro por Tipo de sistema ---
+opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
+seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
+if seleccion_sistema and not todos_sistema:
+    datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
+    
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
+
 # --- Filtro por Cultivos ---
 datos_filtrados["Cultivo_Normalizado"] = (
     datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto).replace(mapa_cultivos)

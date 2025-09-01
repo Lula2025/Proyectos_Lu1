@@ -475,7 +475,7 @@ conteo_pivot = conteo_mix.pivot_table(
 )
 
 # Insertar "Numero de Bitacoras" al inicio
-conteo_pivot.insert(0, "🔢 Numero de Bitacoras ", total_anual.set_index("Anio")["Total"])
+conteo_pivot.insert(0, "🔢 Bitacoras ", total_anual.set_index("Anio")["Total"])
 
 # Insertar "Proyecto Dominante" justo después (posición 1)
 conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
@@ -485,7 +485,7 @@ conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
 tabla_final = conteo_pivot.copy()
 
 for col in tabla_final.columns:
-    if col == "🔢 Numero de Bitacoras ":
+    if col == "🔢 Bitacoras ":
         # Mantener como entero
         tabla_final[col] = tabla_final[col].apply(lambda x: int(x) if pd.notnull(x) else x)
     elif tabla_final[col].dtype in [float, int]:
@@ -499,7 +499,7 @@ tabla_tooltip = tabla_final.copy()
 
 
 # Mostrar tabla final sin % en ningún valor
-st.markdown("### 📋 Número de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
+st.markdown("### 📋 Número Total de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 

@@ -570,14 +570,15 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
     st.dataframe(tabla_pivote, use_container_width=True)
 
 #----------------------------------
+
 # --- Preparar datos ---
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# Agrupar por coordenadas y tipo de sistema
+# --- Agrupar por coordenadas y tipo de parcela ---
 parcelas_geo = (
-    datos_geo.groupby(["Latitud", "Longitud", "Tipo de sistema"])
+    datos_geo.groupby(["Latitud", "Longitud", "Tipo de parcela"])
     .agg(
         Parcelas=("Id_Parcela(Unico)", "nunique"),
         Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
@@ -592,31 +593,35 @@ max_puntos = 3000
 if len(parcelas_geo) > max_puntos:
     parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
 
-# --- Crear diccionario de colores para Tipo de sistema ---
-tipos = parcelas_geo["Tipo de sistema"].unique()
-colores_sistema_list = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A", "#19D3F3", "#FF6692"]
-colores_sistema_dict = {tipo: colores_sistema_list[i % len(colores_sistema_list)] for i, tipo in enumerate(tipos)}
-colores_parcelas = parcelas_geo["Tipo de sistema"].map(colores_sistema_dict)
+# --- Diccionario fijo de colores por Tipo de parcela ---
+colores_parcela_dict = {
+    "Área de Impacto": "#87CEEB",   # azul
+    "Área de extensión": "#2ca02c", # verde
+    "Módulo": "#d62728"             # rojo
+}
 
 # --- Crear figura base ---
 fig_mapa_geo = go.Figure()
 
-# --- Agregar parcelas con tooltip solo de Cultivo(s) ---
-fig_mapa_geo.add_trace(go.Scattermapbox(
-    lat=parcelas_geo["Latitud"],
-    lon=parcelas_geo["Longitud"],
-    mode="markers",
-    marker=dict(
-        size=parcelas_geo["Parcelas"]*2,
-        sizemode="area",
-        sizemin=3,
-        color=colores_parcelas,
-        showscale=False
-    ),
-    text=parcelas_geo["Cultivo(s)"],
-    hovertemplate="<b>%{text}</b><extra></extra>",  # solo muestra Cultivo(s)
-    name="Parcelas"
-))
+# --- Agregar un trace por cada tipo de parcela ---
+for tipo, color in colores_parcela_dict.items():
+    df_tipo = parcelas_geo[parcelas_geo["Tipo de parcela"] == tipo]
+
+    if not df_tipo.empty:
+        fig_mapa_geo.add_trace(go.Scattermapbox(
+            lat=df_tipo["Latitud"],
+            lon=df_tipo["Longitud"],
+            mode="markers",
+            marker=dict(
+                size=df_tipo["Parcelas"] * 2,
+                sizemode="area",
+                sizemin=3,
+                color=color
+            ),
+            text=df_tipo["Cultivo(s)"],
+            hovertemplate="<b>%{text}</b><extra></extra>",
+            name=tipo  # aparece en la leyenda
+        ))
 
 # --- Cargar y simplificar shapefile de Hubs ---
 hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
@@ -675,13 +680,25 @@ fig_mapa_geo.update_layout(
         center={"lat": 23.0, "lon": -102.0},
         zoom=4.0  # ajustar para mostrar todo México
     ),
-    margin={"l":0,"r":0,"t":50,"b":0},
+    margin={"l": 0, "r": 0, "t": 50, "b": 0},
     mapbox_style="carto-positron",
-    title="📍 Distribucion de Parcelas Atendidas por Estado",
+    title="📍 Distribución de Parcelas Atendidas por Estado",
     height=700,  # más alto y cuadrado
-    width=900
-    
+    width=900,
+    legend=dict(
+        title="Tipo de Parcela",
+        orientation="v",   # vertical
+        x=0.99,            # 0 = izq, 1 = der
+        y=0.99,            # 0 = abajo, 1 = arriba
+        xanchor="right",
+        yanchor="top",
+        bgcolor="rgba(255,255,255,0.7)", # fondo semitransparente
+        bordercolor="black",
+        borderwidth=1
+    )
 )
+    
+
 
 
 # --- Mostrar en Streamlit ---

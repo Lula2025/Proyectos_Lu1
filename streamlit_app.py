@@ -161,6 +161,14 @@ if seleccion_ciclos and not todos_ciclos:
     
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Filtro por Año ---
+opciones_anio = sorted(datos_filtrados["Anio"].unique())
+seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
+if seleccion_anio and not todos_anio:
+    datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
+
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
 # --- Filtro por Tipo de Parcela ---
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
 seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
@@ -174,16 +182,6 @@ estados = sorted(datos_filtrados["Estado"].unique())
 seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
 if seleccion_estados and not todos_estados:
     datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
-
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
-
-
-
-# --- Filtro por Año ---
-opciones_anio = sorted(datos_filtrados["Anio"].unique())
-seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
-if seleccion_anio and not todos_anio:
-    datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 

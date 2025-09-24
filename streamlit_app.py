@@ -571,138 +571,137 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
 #----------------------------------
 
-# --- Preparar datos ---
-datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
-datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
-datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
+# --- --- --- Cachear Hubs simplificados --- --- --- #
+@st.cache_data
+def cargar_hubs(path="Capa Hubs MasAgro/HubsMasAgro.shp", tolerance=0.01):
+    hubs = gpd.read_file(path, usecols=["SIGLA", "geometry"])
+    hubs["geometry"] = hubs["geometry"].simplify(tolerance=tolerance, preserve_topology=True)
+    return hubs
 
-# --- Agrupar por coordenadas y tipo de parcela ---
-parcelas_geo = (
-    datos_geo.groupby(["Latitud", "Longitud", "Tipo_parcela"])
-    .agg(
-        Parcelas=("Id_Parcela(Unico)", "nunique"),
-        Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
-    )
-    .reset_index()
-)
+hubs = cargar_hubs()
 
-parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
-
-# --- Opcional: muestrear parcelas si hay demasiadas ---
-max_puntos = 10000
-if len(parcelas_geo) > max_puntos:
-    parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
-
-# --- Diccionario fijo de colores por Tipo de parcela ---
+# Colores fijos
 colores_parcela_dict = {
-    "Área de Impacto": "#87CEEB",   # azul
-    "Área de extensión": "#2ca02c", # verde
-    "Módulo": "#d62728"             # rojo
+    "Área de Impacto": "#87CEEB",
+    "Área de extensión": "#2ca02c",
+    "Módulo": "#d62728"
 }
 
-# --- Crear figura base ---
-fig_mapa_geo = go.Figure()
-
-# --- Agregar un trace por cada tipo de parcela ---
-for tipo, color in colores_parcela_dict.items():
-    df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
-
-    if not df_tipo.empty:
-        fig_mapa_geo.add_trace(go.Scattermapbox(
-            lat=df_tipo["Latitud"],
-            lon=df_tipo["Longitud"],
-            mode="markers",
-            marker=dict(
-                size=df_tipo["Parcelas"] * 2,
-                sizemode="area",
-                sizemin=3,
-                color=color
-            ),
-            text=df_tipo["Cultivo(s)"],
-            hovertemplate="<b>%{text}</b><extra></extra>",
-            name=tipo  # aparece en la leyenda
-        ))
-
-# --- Cargar y simplificar shapefile de Hubs ---
-hubs = gpd.read_file("Capa Hubs MasAgro/HubsMasAgro.shp")
-hubs["geometry"] = hubs["geometry"].simplify(tolerance=0.01, preserve_topology=True)
-
-# Colores predefinidos para SIGLA
 colores_predefinidos = [
     "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
     "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
     "#FFB6C1", "#C2C2F0"
 ]
+colores_hubs = {sigla: colores_predefinidos[i % len(colores_predefinidos)]
+                for i, sigla in enumerate(hubs["SIGLA"].unique())}
 
 def hex_to_rgba(hex_color, alpha=0.3):
     hex_color = hex_color.lstrip('#')
     r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
     return f'rgba({r},{g},{b},{alpha})'
 
-colores_hubs = {sigla: colores_predefinidos[i % len(colores_predefinidos)] for i, sigla in enumerate(hubs["SIGLA"].unique())}
-
-# --- Control de leyenda ---
-leyenda_mostrada = set()
-
-# --- Agregar polígonos de Hubs ---
-for i, row in hubs.iterrows():
-    sigla = row["SIGLA"]
-    color = colores_hubs[sigla]
-    geometria = row.geometry
-
-    def agregar_poligono(poly_coords):
-        lons, lats = zip(*poly_coords)
-        show_legend = sigla not in leyenda_mostrada
-        if show_legend:
-            leyenda_mostrada.add(sigla)
-
-        fig_mapa_geo.add_trace(go.Scattermapbox(
-            lon=lons,
-            lat=lats,
-            mode="lines",
-            fill="toself",
-            fillcolor=hex_to_rgba(color, 0.1),
-            line=dict(width=2, color=color),
-            name=sigla,
-            legendgroup=sigla,
-            showlegend=show_legend
-        ))
-
-    if geometria.geom_type == "Polygon":
-        agregar_poligono(list(geometria.exterior.coords))
-    elif geometria.geom_type == "MultiPolygon":
-        for poly in geometria.geoms:
-            agregar_poligono(list(poly.exterior.coords))
-
-# --- Layout final ---
-fig_mapa_geo.update_layout(
-    mapbox=dict(
-        center={"lat": 23.0, "lon": -102.0},
-        zoom=4.0
-    ),
-    margin={"l": 0, "r": 0, "t": 50, "b": 0},
-    mapbox_style="carto-positron",
-    title="📍 Distribución de Parcelas Atendidas por Estado",
-    height=700,   # mismo tamaño que antes
-    width=900,    # mismo tamaño que antes
-    legend=dict(
-        title="Tipo de Parcela",
-        orientation="v",    # vertical
-        x=1.05,             # fuera a la derecha ( >1 lo manda fuera del cuadro)
-        y=1,                # arriba
-        xanchor="left",     # ancla el lado izquierdo de la leyenda
-        yanchor="top",      # ancla la parte superior
-        bgcolor="rgba(255,255,255,0.7)", # fondo semitransparente
-        bordercolor="black",
-        borderwidth=1
-    )
-)
+# --- --- --- Función para generar figura según filtros --- --- --- #
+def crear_figura(datos_filtrados):
+    # Limpiar y convertir coordenadas
+    datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
+    datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+    datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
     
+    # Reducir decimales
+    datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
+    datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
+    
+    # Agrupar parcelas
+    parcelas_geo = (
+        datos_geo.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
+        .agg(
+            Parcelas=("Id_Parcela(Unico)", "nunique"),
+            Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
+        )
+        .reset_index()
+        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"})
+    )
+    
+    # Muestrear si hay muchos puntos
+    max_puntos = 10000
+    if len(parcelas_geo) > max_puntos:
+        parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
+    
+    # Crear figura
+    fig = go.Figure()
+    
+    # Agregar parcelas por tipo
+    for tipo, color in colores_parcela_dict.items():
+        df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
+        if not df_tipo.empty:
+            fig.add_trace(go.Scattermapbox(
+                lat=df_tipo["Latitud"],
+                lon=df_tipo["Longitud"],
+                mode="markers",
+                marker=dict(
+                    size=df_tipo["Parcelas"] * 2,
+                    sizemode="area",
+                    sizemin=3,
+                    color=color
+                ),
+                text=df_tipo["Cultivo(s)"],
+                hovertemplate="<b>%{text}</b><extra></extra>",
+                name=tipo
+            ))
+    
+    # Agregar polígonos de Hubs (cacheados)
+    leyenda_mostrada = set()
+    for sigla, grupo in hubs.groupby("SIGLA"):
+        color = colores_hubs[sigla]
+        for geom in grupo.geometry:
+            poligonos = [geom] if geom.geom_type == "Polygon" else geom.geoms
+            for poly in poligonos:
+                lons, lats = zip(*poly.exterior.coords)
+                show_legend = sigla not in leyenda_mostrada
+                fig.add_trace(go.Scattermapbox(
+                    lon=lons,
+                    lat=lats,
+                    mode="lines",
+                    fill="toself",
+                    fillcolor=hex_to_rgba(color, 0.1),
+                    line=dict(width=2, color=color),
+                    name=sigla,
+                    legendgroup=sigla,
+                    showlegend=show_legend
+                ))
+                leyenda_mostrada.add(sigla)
+    
+    # Layout
+    fig.update_layout(
+        mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4, style="carto-positron"),
+        margin={"l":0,"r":0,"t":50,"b":0},
+        height=700,
+        width=900,
+        title="📍 Distribución de Parcelas Atendidas por Estado",
+        legend=dict(
+            title="Tipo de Parcela",
+            orientation="v",
+            x=1.05,
+            y=1,
+            xanchor="left",
+            yanchor="top",
+            bgcolor="rgba(255,255,255,0.7)",
+            bordercolor="black",
+            borderwidth=1
+        )
+    )
+    
+    return fig
 
+# --- --- --- Streamlit: aplicar filtros y mostrar figura --- --- --- #
+# Por ejemplo, filtros de tipo de parcela
+tipo_seleccionado = st.multiselect("Seleccionar Tipo de Parcela", options=datos_filtrados["Tipo_parcela"].unique(), default=datos_filtrados["Tipo_parcela"].unique())
+datos_filtrados_filtrado = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(tipo_seleccionado)]
 
-
-# --- Mostrar en Streamlit ---
+fig_mapa_geo = crear_figura(datos_filtrados_filtrado)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
+
+
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

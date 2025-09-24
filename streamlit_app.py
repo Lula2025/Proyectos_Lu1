@@ -571,49 +571,36 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
 #----------------------------------
 
-# --- --- --- Cachear Hubs simplificados --- --- --- #
-@st.cache_data
-def cargar_hubs(path="Capa Hubs MasAgro/HubsMasAgro.shp", tolerance=0.01):
-    hubs = gpd.read_file(path, usecols=["SIGLA", "geometry"])
-    hubs["geometry"] = hubs["geometry"].simplify(tolerance=tolerance, preserve_topology=True)
-    return hubs
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+import numpy as np
 
-hubs = cargar_hubs()
+# --- --- --- Preparar datos de parcelas --- --- --- #
+datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
+datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# Colores fijos
-colores_parcela_dict = {
-    "Área de Impacto": "#87CEEB",
-    "Área de extensión": "#2ca02c",
-    "Módulo": "#d62728"
-}
+# Reducir decimales para agrupar puntos cercanos
+datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
+datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
 
-colores_predefinidos = [
-    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
-    "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
-    "#FFB6C1", "#C2C2F0"
-]
-colores_hubs = {sigla: colores_predefinidos[i % len(colores_predefinidos)]
-                for i, sigla in enumerate(hubs["SIGLA"].unique())}
-
-def hex_to_rgba(hex_color, alpha=0.3):
-    hex_color = hex_color.lstrip('#')
-    r, g, b = int(hex_color[0:2],16), int(hex_color[2:4],16), int(hex_color[4:6],16)
-    return f'rgba({r},{g},{b},{alpha})'
+# --- --- --- Función para muestrear puntos según densidad --- --- --- #
+def muestrear_puntos(df, max_puntos=5000):
+    """Reduce la cantidad de puntos de forma aleatoria si excede max_puntos"""
+    if len(df) > max_puntos:
+        return df.sample(n=max_puntos, random_state=1)
+    return df
 
 # --- --- --- Función para generar figura según filtros --- --- --- #
 def crear_figura(datos_filtrados):
-    # Limpiar y convertir coordenadas
-    datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
-    datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
-    datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
-    
-    # Reducir decimales
-    datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
-    datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
-    
-    # Agrupar parcelas
+    # Filtrar y agrupar
+    datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
+    datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
+    datos_geo_filtrado["Longitud_r"] = datos_geo_filtrado["Longitud"].round(4)
+
     parcelas_geo = (
-        datos_geo.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
+        datos_geo_filtrado.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
         .agg(
             Parcelas=("Id_Parcela(Unico)", "nunique"),
             Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
@@ -621,16 +608,19 @@ def crear_figura(datos_filtrados):
         .reset_index()
         .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"})
     )
-    
-    # Muestrear si hay muchos puntos
-    max_puntos = 10000
-    if len(parcelas_geo) > max_puntos:
-        parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
-    
+
+    # Muestrear puntos si hay demasiados
+    parcelas_geo = muestrear_puntos(parcelas_geo, max_puntos=5000)
+
+    # Colores fijos por tipo de parcela
+    colores_parcela_dict = {
+        "Área de Impacto": "#87CEEB",
+        "Área de extensión": "#2ca02c",
+        "Módulo": "#d62728"
+    }
+
     # Crear figura
     fig = go.Figure()
-    
-    # Agregar parcelas por tipo
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
@@ -648,29 +638,7 @@ def crear_figura(datos_filtrados):
                 hovertemplate="<b>%{text}</b><extra></extra>",
                 name=tipo
             ))
-    
-    # Agregar polígonos de Hubs (cacheados)
-    leyenda_mostrada = set()
-    for sigla, grupo in hubs.groupby("SIGLA"):
-        color = colores_hubs[sigla]
-        for geom in grupo.geometry:
-            poligonos = [geom] if geom.geom_type == "Polygon" else geom.geoms
-            for poly in poligonos:
-                lons, lats = zip(*poly.exterior.coords)
-                show_legend = sigla not in leyenda_mostrada
-                fig.add_trace(go.Scattermapbox(
-                    lon=lons,
-                    lat=lats,
-                    mode="lines",
-                    fill="toself",
-                    fillcolor=hex_to_rgba(color, 0.1),
-                    line=dict(width=2, color=color),
-                    name=sigla,
-                    legendgroup=sigla,
-                    showlegend=show_legend
-                ))
-                leyenda_mostrada.add(sigla)
-    
+
     # Layout
     fig.update_layout(
         mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4, style="carto-positron"),
@@ -690,12 +658,15 @@ def crear_figura(datos_filtrados):
             borderwidth=1
         )
     )
-    
+
     return fig
 
-# --- --- --- Streamlit: aplicar filtros y mostrar figura --- --- --- #
-# Por ejemplo, filtros de tipo de parcela
-tipo_seleccionado = st.multiselect("Seleccionar Tipo de Parcela", options=datos_filtrados["Tipo_parcela"].unique(), default=datos_filtrados["Tipo_parcela"].unique())
+# --- --- --- Streamlit: filtros y figura --- --- --- #
+tipo_seleccionado = st.multiselect(
+    "Seleccionar Tipo de Parcela",
+    options=datos_filtrados["Tipo_parcela"].unique(),
+    default=datos_filtrados["Tipo_parcela"].unique()
+)
 datos_filtrados_filtrado = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(tipo_seleccionado)]
 
 fig_mapa_geo = crear_figura(datos_filtrados_filtrado)

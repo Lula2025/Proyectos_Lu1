@@ -678,20 +678,20 @@ for i, row in hubs.iterrows():
 fig_mapa_geo.update_layout(
     mapbox=dict(
         center={"lat": 23.0, "lon": -102.0},
-        zoom=4.0  # ajustar para mostrar todo México
+        zoom=4.0
     ),
     margin={"l": 0, "r": 0, "t": 50, "b": 0},
     mapbox_style="carto-positron",
     title="📍 Distribución de Parcelas Atendidas por Estado",
-    height=700,  # más alto y cuadrado
-    width=900,
+    height=700,   # mismo tamaño que antes
+    width=900,    # mismo tamaño que antes
     legend=dict(
         title="Tipo de Parcela",
-        orientation="v",   # vertical
-        x=0.99,            # 0 = izq, 1 = der
-        y=0.99,            # 0 = abajo, 1 = arriba
-        xanchor="right",
-        yanchor="top",
+        orientation="v",    # vertical
+        x=1.05,             # fuera a la derecha ( >1 lo manda fuera del cuadro)
+        y=1,                # arriba
+        xanchor="left",     # ancla el lado izquierdo de la leyenda
+        yanchor="top",      # ancla la parte superior
         bgcolor="rgba(255,255,255,0.7)", # fondo semitransparente
         bordercolor="black",
         borderwidth=1

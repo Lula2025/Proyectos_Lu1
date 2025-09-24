@@ -94,7 +94,7 @@ color_map_parcela = {
 }
 
 
-# --- Inicializar datos ---
+# --- Inicializar datos filtrados ---
 datos_filtrados = datos.copy()
 
 # --- Función de normalización de texto ---
@@ -105,77 +105,62 @@ def normalizar_texto(texto):
     texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
     return texto
 
-# --- Función multiselect con seleccionar/deseleccionar todo ---
-def multiselect_todo(label, opciones, key):
-    opciones = sorted(opciones)
-    
-    if f"{key}_todo" not in st.session_state:
-        st.session_state[f"{key}_todo"] = True
-
-    # Mostrar multiselect con opciones seleccionadas según el estado del botón
-    seleccion = st.sidebar.multiselect(
-        label,
-        opciones,
-        default=opciones if st.session_state[f"{key}_todo"] else [],
-        key=f"ms_{key}"
-    )
-    
-    # Botón para alternar todo
-    if st.sidebar.button(
-        f"{'Deseleccionar' if st.session_state[f'{key}_todo'] else 'Seleccionar'} todo {label}",
-        key=f"btn_{key}"
-    ):
-        st.session_state[f"{key}_todo"] = not st.session_state[f"{key}_todo"]
-        st.experimental_rerun()  # Forzar actualización
-
-    return seleccion
+# --- Función para crear checkboxes individuales ---
+def checkbox_list_simple(label, opciones, key):
+    st.sidebar.markdown(f"**{label}**")
+    seleccionadas = []
+    for o in sorted(opciones):
+        # Todas las casillas seleccionadas por defecto
+        if st.sidebar.checkbox(str(o), value=True, key=f"{key}_{o}"):
+            seleccionadas.append(o)
+    return seleccionadas
 
 st.sidebar.header(" 🔽 Filtros")
 
 # --- Filtro por HUB Agroecológico ---
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
-seleccion_hubs = multiselect_todo("HUB Agroecológico", hubs, "hub")
+seleccion_hubs = checkbox_list_simple("HUB Agroecológico", hubs, "hub")
 datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
 # --- Filtro por Categoría del Proyecto ---
 categorias = sorted(datos_filtrados["Categoria_Proyecto"].dropna().unique())
-seleccion_categorias = multiselect_todo("Categoría del Proyecto", categorias, "categoria")
+seleccion_categorias = checkbox_list_simple("Categoría del Proyecto", categorias, "categoria")
 datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
 
 # --- Filtro por Proyecto ---
 proyectos = sorted(datos_filtrados["Proyecto"].dropna().unique())
-seleccion_proyectos = multiselect_todo("Proyecto", proyectos, "proyecto")
+seleccion_proyectos = checkbox_list_simple("Proyecto", proyectos, "proyecto")
 datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
 
 # --- Filtro por Ciclo ---
 ciclos = sorted(datos_filtrados["Ciclo"].dropna().unique())
-seleccion_ciclos = multiselect_todo("Ciclo", ciclos, "ciclo")
+seleccion_ciclos = checkbox_list_simple("Ciclo", ciclos, "ciclo")
 datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 
 # --- Filtro por Tipo de Parcela ---
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].dropna().unique())
-seleccion_tipos_parcela = multiselect_todo("Tipo de Parcela", tipos_parcela, "parcela")
+seleccion_tipos_parcela = checkbox_list_simple("Tipo de Parcela", tipos_parcela, "parcela")
 datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 # --- Filtro por Estado ---
 estados = sorted(datos_filtrados["Estado"].dropna().unique())
-seleccion_estados = multiselect_todo("Estado", estados, "estado")
+seleccion_estados = checkbox_list_simple("Estado", estados, "estado")
 datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 # --- Filtro por Año ---
 opciones_anio = sorted(datos_filtrados["Anio"].dropna().unique())
-seleccion_anio = multiselect_todo("Año", opciones_anio, "anio")
+seleccion_anio = checkbox_list_simple("Año", opciones_anio, "anio")
 datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 
 # --- Filtro por Tipo de sistema ---
 opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].dropna().unique())
-seleccion_sistema = multiselect_todo("Tipo de sistema", opciones_sistema, "sistema")
+seleccion_sistema = checkbox_list_simple("Tipo de sistema", opciones_sistema, "sistema")
 datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
 
 # --- Filtro por Cultivos ---
 datos_filtrados["Cultivo_Normalizado"] = datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto)
 opciones_cultivo = sorted(datos_filtrados["Cultivo_Normalizado"].unique())
-seleccion_cultivos = multiselect_todo("Cultivo Principal", opciones_cultivo, "cultivo")
+seleccion_cultivos = checkbox_list_simple("Cultivo Principal", opciones_cultivo, "cultivo")
 datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
 
 # --- Resumen de filtros aplicados ---

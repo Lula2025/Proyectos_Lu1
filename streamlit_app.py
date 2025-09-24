@@ -97,7 +97,7 @@ color_map_parcela = {
 # --- Inicializar datos filtrados ---
 datos_filtrados = datos.copy()
 
-# --- Función de normalización de texto (si no está definida) ---
+# --- Función de normalización de texto ---
 def normalizar_texto(texto):
     if pd.isna(texto):
         return ""
@@ -105,106 +105,100 @@ def normalizar_texto(texto):
     texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
     return texto
 
-# --- Diccionario de mapas de cultivos (ejemplo) ---
-mapa_cultivos = {}  # Completa con tus equivalencias si aplica
-
-# --- Sidebar de filtros encadenados mejorado ---
-st.sidebar.header(" 🔽 Filtros")
-
-# Función para checkboxes con opción de seleccionar todos
-def checkbox_list(label, opciones, prefix):
-    """Crea un grupo de checkboxes con opción de seleccionar todo"""
-    st.sidebar.markdown(f"**{label}**")
-    seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
+# --- Función multiselect con seleccionar/deseleccionar todo ---
+def multiselect_todo(label, opciones, key):
+    """
+    Crea un multiselect con botón para seleccionar o deseleccionar todo.
+    Devuelve:
+        seleccionadas: lista de opciones seleccionadas
+        todo_seleccionado: True si todas están seleccionadas
+    """
+    opciones = sorted(opciones)
     
-    seleccionadas = []
-    for o in opciones:
-        default_value = seleccionar_todos
-        key_name = f"{prefix}_{str(o)}"
-        if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
-            seleccionadas.append(o)
-    return seleccionadas, seleccionar_todos
+    # Inicialmente todas seleccionadas
+    if f"{key}_todo" not in st.session_state:
+        st.session_state[f"{key}_todo"] = True
+    
+    # Botón para alternar seleccionar/deseleccionar todo
+    if st.sidebar.button(
+        f"{'Deseleccionar' if st.session_state[f'{key}_todo'] else 'Seleccionar'} todo {label}", 
+        key=f"btn_{key}"
+    ):
+        st.session_state[f"{key}_todo"] = not st.session_state[f"{key}_todo"]
 
-# Inicializar filtros
-datos_filtrados = datos.copy()
+    # Mostrar multiselect con todas o ninguna opción según el estado
+    default = opciones if st.session_state[f"{key}_todo"] else []
+    seleccionadas = st.sidebar.multiselect(label, opciones, default=default, key=f"ms_{key}")
+
+    todo_seleccionado = len(seleccionadas) == len(opciones)
+    return seleccionadas, todo_seleccionado
+
+# --- Sidebar de filtros ---
+st.sidebar.header(" 🔽 Filtros")
 
 # --- Filtro por HUB Agroecológico ---
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
-seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
-if seleccion_hubs and not todos_hubs:
-    datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
+seleccion_hubs, todos_hubs = multiselect_todo("HUB Agroecológico", hubs, "hub")
+datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Categoría del Proyecto ---
-categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
-seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
-if seleccion_categorias and not todos_categorias:
-    datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
-    
-st.markdown("---")  # Esta es la línea de separación
+categorias = sorted(datos_filtrados["Categoria_Proyecto"].dropna().unique())
+seleccion_categorias, todos_categorias = multiselect_todo("Categoría del Proyecto", categorias, "categoria")
+datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Proyecto ---
-proyectos = sorted(datos_filtrados["Proyecto"].unique())
-seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
-if seleccion_proyectos and not todos_proyectos:
-    datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
-    
+proyectos = sorted(datos_filtrados["Proyecto"].dropna().unique())
+seleccion_proyectos, todos_proyectos = multiselect_todo("Proyecto", proyectos, "proyecto")
+datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Ciclo ---
-ciclos = sorted(datos_filtrados["Ciclo"].unique())
-seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
-if seleccion_ciclos and not todos_ciclos:
-    datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
-    
+ciclos = sorted(datos_filtrados["Ciclo"].dropna().unique())
+seleccion_ciclos, todos_ciclos = multiselect_todo("Ciclo", ciclos, "ciclo")
+datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Tipo de Parcela ---
-tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
-seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
-if seleccion_tipos_parcela and not todos_tipos_parcela:
-    datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
+tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].dropna().unique())
+seleccion_tipos_parcela, todos_tipos_parcela = multiselect_todo("Tipo de Parcela", tipos_parcela, "parcela")
+datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Estado ---
-estados = sorted(datos_filtrados["Estado"].unique())
-seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
-if seleccion_estados and not todos_estados:
-    datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
+estados = sorted(datos_filtrados["Estado"].dropna().unique())
+seleccion_estados, todos_estados = multiselect_todo("Estado", estados, "estado")
+datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
-
-
 
 # --- Filtro por Año ---
-opciones_anio = sorted(datos_filtrados["Anio"].unique())
-seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
-if seleccion_anio and not todos_anio:
-    datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
+opciones_anio = sorted(datos_filtrados["Anio"].dropna().unique())
+seleccion_anio, todos_anio = multiselect_todo("Año", opciones_anio, "anio")
+datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
-
 
 # --- Filtro por Tipo de sistema ---
-opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
-seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
-if seleccion_sistema and not todos_sistema:
-    datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
-    
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].dropna().unique())
+seleccion_sistema, todos_sistema = multiselect_todo("Tipo de sistema", opciones_sistema, "sistema")
+datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
 
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 # --- Filtro por Cultivos ---
 datos_filtrados["Cultivo_Normalizado"] = (
-    datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto).replace(mapa_cultivos)
+    datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto)
 )
 opciones_cultivo = sorted(datos_filtrados["Cultivo_Normalizado"].unique())
-seleccion_cultivos, todos_cultivos = checkbox_list("Cultivo Principal", opciones_cultivo, "cultivo")
-if seleccion_cultivos and not todos_cultivos:
-    datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
+seleccion_cultivos, todos_cultivos = multiselect_todo("Cultivo Principal", opciones_cultivo, "cultivo")
+datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
 
 # --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
@@ -216,13 +210,14 @@ def mostrar_filtro(nombre, seleccion, todos):
     elif seleccion:
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
 
+mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, todos_hubs)
 mostrar_filtro("Categoría", seleccion_categorias, todos_categorias)
 mostrar_filtro("Proyectos", seleccion_proyectos, todos_proyectos)
 mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
 mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
 mostrar_filtro("Estados", seleccion_estados, todos_estados)
-mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, todos_hubs)
 mostrar_filtro("Años", seleccion_anio, todos_anio)
+mostrar_filtro("Tipo de sistema", seleccion_sistema, todos_sistema)
 mostrar_filtro("Cultivos", seleccion_cultivos, todos_cultivos)
 
 if filtros_texto:

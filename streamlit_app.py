@@ -589,7 +589,7 @@ parcelas_geo = (
 parcelas_geo = parcelas_geo.rename(columns={"Cultivos_unicos": "Cultivo(s)"})
 
 # --- Opcional: muestrear parcelas si hay demasiadas ---
-max_puntos = 100
+max_puntos = 800000
 if len(parcelas_geo) > max_puntos:
     parcelas_geo = parcelas_geo.sample(n=max_puntos, random_state=1)
 

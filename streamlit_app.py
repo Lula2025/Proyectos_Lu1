@@ -677,7 +677,7 @@ fig_mapa_geo.update_layout(
     ),
     margin={"l":0,"r":0,"t":50,"b":0},
     mapbox_style="carto-positron",
-    title="📍 Distribucion de Parcelas Atendidas por Estado"
+    title="📍 Distribucion de Parcelas Atendidas por Estado",
     height=700,  # más alto y cuadrado
     width=900
     

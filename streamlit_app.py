@@ -578,7 +578,7 @@ datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
 # --- Agrupar por coordenadas y tipo de parcela ---
 parcelas_geo = (
-    datos_geo.groupby(["Latitud", "Longitud", "Tipo de parcela"])
+    datos_geo.groupby(["Latitud", "Longitud", "Tipo_parcela"])
     .agg(
         Parcelas=("Id_Parcela(Unico)", "nunique"),
         Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
@@ -605,7 +605,7 @@ fig_mapa_geo = go.Figure()
 
 # --- Agregar un trace por cada tipo de parcela ---
 for tipo, color in colores_parcela_dict.items():
-    df_tipo = parcelas_geo[parcelas_geo["Tipo de parcela"] == tipo]
+    df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
 
     if not df_tipo.empty:
         fig_mapa_geo.add_trace(go.Scattermapbox(

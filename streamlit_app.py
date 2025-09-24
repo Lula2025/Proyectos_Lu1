@@ -679,6 +679,7 @@ fig_mapa_geo.update_layout(
     mapbox_style="carto-positron",
     height=700,  # más alto y cuadrado
     width=900
+    title="📍 Distribucion de Parcelas Atendidas por Estado"
 )
 
 
@@ -745,7 +746,7 @@ fig_estado = px.scatter_mapbox(
     zoom=4.0,
     center={"lat": 23.0, "lon": -102.0},
     mapbox_style="carto-positron",
-    title="📍 Número de Parcelas Atendidas por Estado"
+    title="📍 Intensidad de Parcelas Atendidas por Estado"
 )
 
 # --- Ajuste dinámico de escala de colores ---

@@ -564,9 +564,19 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 #----------------------------------
 
 
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+import numpy as np
+
 # --- --- --- Preparar datos de parcelas --- --- --- #
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
+
+# Reducir decimales para agrupar puntos cercanos
+datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
+datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
 
 # --- --- --- Función para muestrear puntos según densidad --- --- --- #
 def muestrear_puntos(df, max_puntos=5000):
@@ -607,12 +617,14 @@ def crear_figura(datos_filtrados):
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
+            # Escalar tamaño de marcadores con np.clip
+            tamanios = np.clip(df_tipo["Parcelas"] * 2, 5, 25)  # mínimo 5, máximo 25
             fig.add_trace(go.Scattermapbox(
                 lat=df_tipo["Latitud"],
                 lon=df_tipo["Longitud"],
                 mode="markers",
                 marker=dict(
-                    size=np.clip(pd.to_numeric(df_tipo["Parcelas"], errors="coerce").fillna(1) * 2, 3, 30),
+                    size=tamanios,
                     sizemode="area",
                     color=color
                 ),
@@ -643,10 +655,9 @@ def crear_figura(datos_filtrados):
 
     return fig
 
-# --- --- --- Mostrar figura en Streamlit --- --- --- #
+# --- --- --- Streamlit: solo crear figura con los datos ya filtrados --- --- --- #
 fig_mapa_geo = crear_figura(datos_filtrados)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 
 # -----------------------------------

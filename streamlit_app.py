@@ -191,7 +191,7 @@ mostrar_filtro("Estados", seleccion_estados)
 mostrar_filtro("Tipo de sistema", seleccion_sistema)
 mostrar_filtro("Cultivo(s)", seleccion_cultivos)
 
-st.markdown(",  ".join(filtros_texto) if filtros_texto else "No se aplicaron filtros, se muestran todos los dat
+st.markdown(",  ".join(filtros_texto) if filtros_texto else "No se aplicaron filtros, se muestran todos los datos.")
 
 
 # ----------------------------

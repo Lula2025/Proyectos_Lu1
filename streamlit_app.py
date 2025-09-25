@@ -83,11 +83,10 @@ color_map_parcela = {
     
 
 # --- Inicializar datos ---
-datos_filtrados = datos.copy()
-datos_filtrados["Anio"] = pd.to_numeric(datos_filtrados["Anio"], errors="coerce").astype("Int64")
-ultimos_anios = sorted(datos_filtrados["Anio"].dropna().unique())[-2:]
+datos = datos.copy()
+datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce").astype("Int64")
 
-# --- Función de normalización ---
+# --- Normalizar texto ---
 def normalizar_texto(texto):
     if pd.isna(texto):
         return ""
@@ -95,45 +94,7 @@ def normalizar_texto(texto):
     texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
     return texto
 
-# --- Función de checkbox con preselección ---
-def checkbox_list_dynamic(label, opciones, prefix, default_seleccionadas=None):
-    st.sidebar.markdown(f"**{label}**")
-    seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=(default_seleccionadas is None), key=f"{prefix}_all")
-    seleccionadas = []
-    for o in opciones:
-        default_value = (default_seleccionadas is not None and o in default_seleccionadas) or seleccionar_todos
-        key_name = f"{prefix}_{str(o)}"
-        if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
-            seleccionadas.append(o)
-    return seleccionadas, seleccionar_todos
-
-# --- Sidebar de filtros ---
-st.sidebar.header(" 🔽 Filtros")
-
-# --- Años (preseleccionados últimos 2) ---
-opciones_anio = sorted(datos["Anio"].dropna().unique())
-seleccion_anio, todos_anio = checkbox_list_dynamic("Año", opciones_anio, "anio", default_seleccionadas=ultimos_anios)
-datos_filtrados = datos[datos["Anio"].isin(seleccion_anio)]
-
-# --- Función para filtro encadenado dinámico ---
-def filtro_encadenado(nombre, columna, datos_actuales, prefix):
-    opciones = sorted(datos_actuales[columna].dropna().unique())
-    seleccion, todos = checkbox_list_dynamic(nombre, opciones, prefix)
-    if seleccion and not todos:
-        datos_actuales = datos_actuales[datos_actuales[columna].isin(seleccion)]
-    st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
-    return seleccion, todos, datos_actuales
-
-# --- Filtros encadenados ---
-seleccion_hubs, todos_hubs, datos_filtrados = filtro_encadenado("HUB Agroecológico", "HUB_Agroecológico", datos_filtrados, "hub")
-seleccion_categorias, todos_categorias, datos_filtrados = filtro_encadenado("Categoría del Proyecto", "Categoria_Proyecto", datos_filtrados, "categoria")
-seleccion_proyectos, todos_proyectos, datos_filtrados = filtro_encadenado("Proyecto", "Proyecto", datos_filtrados, "proyecto")
-seleccion_ciclos, todos_ciclos, datos_filtrados = filtro_encadenado("Ciclo", "Ciclo", datos_filtrados, "ciclo")
-seleccion_tipos_parcela, todos_tipos_parcela, datos_filtrados = filtro_encadenado("Tipo de Parcela", "Tipo_parcela", datos_filtrados, "parcela")
-seleccion_estados, todos_estados, datos_filtrados = filtro_encadenado("Estado", "Estado", datos_filtrados, "estado")
-seleccion_sistema, todos_sistema, datos_filtrados = filtro_encadenado("Tipo de sistema", "Tipo de sistema", datos_filtrados, "sistema")
-
-# --- Cultivo ---
+# --- Clasificación de cultivos ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -151,37 +112,102 @@ def clasificar_cultivo_multiple(texto):
         categorias.append("Otros")
     return categorias
 
-datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
+datos["Cultivo_Categorizado"] = datos["Cultivo(s)"].apply(clasificar_cultivo_multiple)
+
+# --- Sidebar ---
+st.sidebar.header(" 🔽 Filtros")
+
+# --- Últimos 2 años ---
+ultimos_anios = sorted(datos["Anio"].dropna().unique())[-2:]
+
+# --- Función para filtrar dinámicamente ---
+def aplicar_filtros(df, filtros_dict):
+    df_filtrado = df.copy()
+    
+    # Filtro por Año
+    if filtros_dict.get("Año"):
+        df_filtrado = df_filtrado[df_filtrado["Anio"].isin(filtros_dict["Año"])]
+    # Filtro por HUB
+    if filtros_dict.get("HUB_Agroecológico"):
+        df_filtrado = df_filtrado[df_filtrado["HUB_Agroecológico"].isin(filtros_dict["HUB_Agroecológico"])]
+    # Categoría
+    if filtros_dict.get("Categoria_Proyecto"):
+        df_filtrado = df_filtrado[df_filtrado["Categoria_Proyecto"].isin(filtros_dict["Categoria_Proyecto"])]
+    # Proyecto
+    if filtros_dict.get("Proyecto"):
+        df_filtrado = df_filtrado[df_filtrado["Proyecto"].isin(filtros_dict["Proyecto"])]
+    # Ciclo
+    if filtros_dict.get("Ciclo"):
+        df_filtrado = df_filtrado[df_filtrado["Ciclo"].isin(filtros_dict["Ciclo"])]
+    # Tipo de Parcela
+    if filtros_dict.get("Tipo_parcela"):
+        df_filtrado = df_filtrado[df_filtrado["Tipo_parcela"].isin(filtros_dict["Tipo_parcela"])]
+    # Estado
+    if filtros_dict.get("Estado"):
+        df_filtrado = df_filtrado[df_filtrado["Estado"].isin(filtros_dict["Estado"])]
+    # Tipo de sistema
+    if filtros_dict.get("Tipo de sistema"):
+        df_filtrado = df_filtrado[df_filtrado["Tipo de sistema"].isin(filtros_dict["Tipo de sistema"])]
+    # Cultivo
+    if filtros_dict.get("Cultivo(s)"):
+        df_filtrado = df_filtrado[
+            df_filtrado["Cultivo_Categorizado"].apply(lambda cats: any(c in filtros_dict["Cultivo(s)"] for c in cats))
+        ]
+    return df_filtrado
+
+# --- Diccionario de filtros ---
+filtros = {}
+
+# --- Año ---
+opciones_anio = sorted(datos["Anio"].dropna().unique())
+filtros["Año"] = st.sidebar.multiselect("Año", opciones_anio, default=ultimos_anios)
+
+# Aplicar filtros iniciales para encadenar las opciones
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+# --- Filtros encadenados ---
+filtros["HUB_Agroecológico"] = st.sidebar.multiselect("HUB Agroecológico",
+                                                       sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+filtros["Categoria_Proyecto"] = st.sidebar.multiselect("Categoría del Proyecto",
+                                                        sorted(datos_filtrados["Categoria_Proyecto"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+filtros["Proyecto"] = st.sidebar.multiselect("Proyecto",
+                                              sorted(datos_filtrados["Proyecto"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+filtros["Ciclo"] = st.sidebar.multiselect("Ciclo",
+                                          sorted(datos_filtrados["Ciclo"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+filtros["Tipo_parcela"] = st.sidebar.multiselect("Tipo de Parcela",
+                                                 sorted(datos_filtrados["Tipo_parcela"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+filtros["Estado"] = st.sidebar.multiselect("Estado",
+                                           sorted(datos_filtrados["Estado"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
+filtros["Tipo de sistema"] = st.sidebar.multiselect("Tipo de sistema",
+                                                    sorted(datos_filtrados["Tipo de sistema"].dropna().unique()))
+datos_filtrados = aplicar_filtros(datos, filtros)
+
 opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
-seleccion_cultivos, todos_cultivos = checkbox_list_dynamic("Cultivo(s)", opciones_cultivo, "cultivo", default_seleccionadas=opciones_cultivo)
-if seleccion_cultivos and not todos_cultivos:
-    datos_filtrados = datos_filtrados[
-        datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
-    ]
+filtros["Cultivo(s)"] = st.sidebar.multiselect("Cultivo(s)", opciones_cultivo)
+datos_filtrados = aplicar_filtros(datos, filtros)
 
 # --- Mostrar filtros aplicados ---
 st.markdown("### Filtros Aplicados")
 filtros_texto = []
-def mostrar_filtro(nombre, seleccion, todos):
-    if todos:
-        filtros_texto.append(f"**{nombre}:** Todos")
-    elif seleccion:
+for nombre, seleccion in filtros.items():
+    if seleccion:
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
+    else:
+        filtros_texto.append(f"**{nombre}:** Todos")
+st.markdown(",  ".join(filtros_texto))
 
-for n, s, t in [
-    ("Años", seleccion_anio, todos_anio),
-    ("HUBs Agroecológicos", seleccion_hubs, todos_hubs),
-    ("Categoría", seleccion_categorias, todos_categorias),
-    ("Proyectos", seleccion_proyectos, todos_proyectos),
-    ("Ciclos", seleccion_ciclos, todos_ciclos),
-    ("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela),
-    ("Estados", seleccion_estados, todos_estados),
-    ("Tipo de sistema", seleccion_sistema, todos_sistema),
-    ("Cultivo(s)", seleccion_cultivos, todos_cultivos)
-]:
-    mostrar_filtro(n, s, t)
-
-st.markdown(",  ".join(filtros_texto) if filtros_texto else "No se aplicaron filtros, se muestran todos los datos.")
 
     
 

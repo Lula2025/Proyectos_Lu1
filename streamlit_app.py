@@ -612,7 +612,7 @@ def crear_figura(datos_filtrados):
                 lon=df_tipo["Longitud"],
                 mode="markers",
                 marker=dict(
-                    size=np.clip(df_tipo["Parcelas"] * 2, 3, 30),  # 👈 evita tamaños exagerados
+                    size=np.clip(pd.to_numeric(df_tipo["Parcelas"], errors="coerce").fillna(1) * 2, 3, 30),
                     sizemode="area",
                     color=color
                 ),
@@ -643,7 +643,7 @@ def crear_figura(datos_filtrados):
 
     return fig
 
-# --- Mostrar figura en Streamlit ---
+# --- --- --- Mostrar figura en Streamlit --- --- --- #
 fig_mapa_geo = crear_figura(datos_filtrados)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 

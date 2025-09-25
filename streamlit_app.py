@@ -109,11 +109,12 @@ def checkbox_list(label, opciones, prefix):
         if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
             seleccionadas.append(o)
     return seleccionadas, seleccionar_todos
+    
 
 # --- Inicializar datos filtrados ---
 datos_filtrados = datos.copy()
 
-# --- Función de normalización de texto ---
+# --- Función de normalización de texto (si no está definida) ---
 def normalizar_texto(texto):
     if pd.isna(texto):
         return ""
@@ -121,14 +122,12 @@ def normalizar_texto(texto):
     texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
     return texto
 
-# --- Diccionario de mapas de cultivos (si aplica) ---
-mapa_cultivos = {}
-
 # --- Sidebar de filtros encadenados ---
 st.sidebar.header(" 🔽 Filtros")
 
-# --- Función para casillas múltiples con "seleccionar todos" ---
+# Función para checkboxes con opción de seleccionar todos
 def checkbox_list(label, opciones, prefix):
+    """Crea un grupo de checkboxes con opción de seleccionar/deseleccionar todo"""
     st.sidebar.markdown(f"**{label}**")
     seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
     
@@ -140,97 +139,63 @@ def checkbox_list(label, opciones, prefix):
             seleccionadas.append(o)
     return seleccionadas, seleccionar_todos
 
-
-# --- Función para multiselect con "Todo" ---
-def checkbox_con_todo(label, opciones, key):
-    col1, col2 = st.sidebar.columns([4, 1])
-
-    with col1:
-        seleccion = st.multiselect(label, opciones, default=opciones, key=f"{key}_multiselect")
-
-    with col2:
-        seleccionar_todo = st.checkbox("Todo", value=True, key=f"{key}_todo")
-
-    if seleccionar_todo:
-        return opciones
-    else:
-        return seleccion
-
-
-# --- Filtros ---
-# HUB Agroecológico
+# --- Filtro por HUB Agroecológico ---
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
 seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
 if seleccion_hubs and not todos_hubs:
     datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Categoría del Proyecto
+# --- Filtro por Categoría del Proyecto ---
 categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
 seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
 if seleccion_categorias and not todos_categorias:
     datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Proyecto
+# --- Filtro por Proyecto ---
 proyectos = sorted(datos_filtrados["Proyecto"].unique())
 seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
 if seleccion_proyectos and not todos_proyectos:
     datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Ciclo
+# --- Filtro por Ciclo ---
 ciclos = sorted(datos_filtrados["Ciclo"].unique())
 seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
 if seleccion_ciclos and not todos_ciclos:
     datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Año
+# --- Filtro por Año ---
 opciones_anio = sorted(datos_filtrados["Anio"].unique())
 seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
 if seleccion_anio and not todos_anio:
     datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Tipo de Parcela
+# --- Filtro por Tipo de Parcela ---
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
 seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
 if seleccion_tipos_parcela and not todos_tipos_parcela:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Estado
+# --- Filtro por Estado ---
 estados = sorted(datos_filtrados["Estado"].unique())
 seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
 if seleccion_estados and not todos_estados:
     datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Tipo de sistema
+# --- Filtro por Tipo de sistema ---
 opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
 seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
 if seleccion_sistema and not todos_sistema:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
-
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-
-# Cultivo(s) - categorizado
+# --- Filtro por Cultivo(s) ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -248,16 +213,18 @@ def clasificar_cultivo_multiple(texto):
         categorias.append("Otros")
     return categorias
 
+# Crear columna con categorías
 datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
 
+# Opciones fijas
 opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
-seleccion_cultivos = checkbox_con_todo("Cultivo(s)", opciones_cultivo, "cultivo")
+seleccion_cultivos, todos_cultivos = checkbox_list("Cultivo(s)", opciones_cultivo, "cultivo")
 
-if seleccion_cultivos:
+# Filtrado
+if seleccion_cultivos and not todos_cultivos:
     datos_filtrados = datos_filtrados[
         datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
     ]
-
 
 # --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
@@ -277,13 +244,13 @@ mostrar_filtro("Años", seleccion_anio, todos_anio)
 mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
 mostrar_filtro("Estados", seleccion_estados, todos_estados)
 mostrar_filtro("Tipo de sistema", seleccion_sistema, todos_sistema)
-mostrar_filtro("Cultivo(s)", seleccion_cultivos, False)  # Aquí no usamos "todos_cultivos" porque lo maneja multiselect
+mostrar_filtro("Cultivo(s)", seleccion_cultivos, todos_cultivos)
 
 if filtros_texto:
     st.markdown(",  ".join(filtros_texto))
 else:
     st.markdown("No se aplicaron filtros, se muestran todos los datos.")
-
+    
 
 # --- Resumen de cifras totales ---
 # st.markdown("### Informe de acuerdo a los filtros")
@@ -624,19 +591,10 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
 #----------------------------------
 
-import pandas as pd
-import plotly.graph_objects as go
-import streamlit as st
-import numpy as np
 
 # --- --- --- Preparar datos de parcelas --- --- --- #
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
-datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
-
-# Reducir decimales para agrupar puntos cercanos
-datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
-datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
 
 # --- --- --- Función para muestrear puntos según densidad --- --- --- #
 def muestrear_puntos(df, max_puntos=5000):
@@ -682,9 +640,8 @@ def crear_figura(datos_filtrados):
                 lon=df_tipo["Longitud"],
                 mode="markers",
                 marker=dict(
-                    size=df_tipo["Parcelas"] * 2,
+                    size=np.clip(df_tipo["Parcelas"] * 2, 3, 30),  # 👈 evita tamaños exagerados
                     sizemode="area",
-                    sizemin=3,
                     color=color
                 ),
                 text=df_tipo["Cultivo(s)"],
@@ -712,9 +669,10 @@ def crear_figura(datos_filtrados):
         )
     )
 
+    return fig
 
-# --- --- --- Streamlit: filtros y figura --- --- --- #
-
+# --- Mostrar figura en Streamlit ---
+fig_mapa_geo = crear_figura(datos_filtrados)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 

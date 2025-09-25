@@ -455,7 +455,10 @@ if "🔢 Bitacoras " in tabla_final.columns:
 
 # Mostrar tabla final en Streamlit
 st.markdown("### 📋 Número Total de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
-st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(120, 60 len(tabla_final)))
+st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(120, 60* len(tabla_final)))
+
+
+
 
 
 # ----------

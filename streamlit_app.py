@@ -427,7 +427,7 @@ proyecto_max = (
     .set_index("Anio")["Proyecto"]
 )
 
-# Crear tabla pivotada con MultiIndex
+# Crear tabla con MultiIndex (Categoria -> Proyecto) como columnas
 conteo_pivot = conteo_mix.pivot_table(
     index="Anio",
     columns=["Categoria_Proyecto", "Proyecto"],
@@ -435,30 +435,30 @@ conteo_pivot = conteo_mix.pivot_table(
     fill_value=0
 )
 
-# Insertar totales al inicio
+# Insertar "Numero de Bitacoras" al inicio
 conteo_pivot.insert(0, "🔢 Bitacoras ", total_anual.set_index("Anio")["Total"])
+
+# Insertar "Proyecto Dominante" justo después (posición 1)
 conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
 
-# --- Aplanar columnas MultiIndex ---
+# Convertir tabla final y redondear solo columnas numéricas
 tabla_final = conteo_pivot.copy()
-tabla_final.columns = [
-    " / ".join([str(i) for i in col]) if isinstance(col, tuple) else str(col) 
-    for col in tabla_final.columns
-]
 
-# Redondear valores y mantener totales como enteros
 for col in tabla_final.columns:
-    if col == "🔢 Bitacoras ":
-        tabla_final[col] = tabla_final[col].apply(lambda x: int(x) if pd.notnull(x) else x)
-    else:
+    if pd.api.types.is_numeric_dtype(tabla_final[col]):
+        # Redondear floats a 2 decimales
         tabla_final[col] = tabla_final[col].apply(lambda x: round(x, 2) if pd.notnull(x) else x)
 
-# --- Mostrar tabla ---
+# Asegurar que "🔢 Bitacoras " sea entero
+if "🔢 Bitacoras " in tabla_final.columns:
+    tabla_final["🔢 Bitacoras "] = tabla_final["🔢 Bitacoras "].astype(int)
+
+# Mostrar tabla final en Streamlit
 st.markdown("### 📋 Número Total de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
-st.dataframe(tabla_final.reset_index(), use_container_width=True, height=min(600, 40 * len(tabla_final)))
+st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
 
 
-# ---
+# ----------
 
 # --- Tabla de porcentajes por año y categoría del proyecto ---
 st.markdown("### 📋 Distribución(%) por Categoría del Proyecto, por Año")

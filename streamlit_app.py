@@ -47,12 +47,14 @@ with col1:
     st.image("assets/cimmyt.png", use_container_width=True)
 with col3:
     st.image("assets/ea.png", use_container_width=True)
+    
 
 # --- Preprocesamiento ---
 columnas_requeridas = [
     "Anio", "Categoria_Proyecto", "Ciclo", "Estado",
     "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)", "Proyecto"
 ]
+
 for columna in columnas_requeridas:
     if columna not in datos.columns:
         st.error(f"La columna '{columna}' no existe en el archivo CSV.")
@@ -64,12 +66,17 @@ columnas_categoricas = ["Categoria_Proyecto", "Ciclo", "Estado", "Tipo_Regimen_H
 for col in columnas_categoricas:
     datos[col] = datos[col].astype(str)
 
+# Convertir columnas numéricas
 datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
 datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
     datos["Area_total_de_la_parcela(ha)"], errors="coerce"
 ).fillna(0)
 
+# Filtrar años válidos
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
+
+# Inicializar datos_filtrados
+datos_filtrados = datos.copy()
 
 # --- Crear mapa de colores fijo para Tipo_parcela ---
 color_map_parcela = {
@@ -77,9 +84,6 @@ color_map_parcela = {
     "Área de extensión": "#2ca02c",  # Verde
     "Módulo": "#d62728" ,           # Rojo
 }
-
-
- 
 
 # --- Inicializar filtros ---
 filtros_dict = {}
@@ -116,13 +120,14 @@ def filtro_multiselect(columna, label):
     seleccion = st.sidebar.multiselect(label, opciones, default=opciones)
     return seleccion
 
+# Aplicar filtros
 for col in columnas_filtro:
     seleccion = filtro_multiselect(col, col.replace("_"," "))
     if seleccion:
         datos_filtrados = datos_filtrados[datos_filtrados[col].isin(seleccion)]
     filtros_dict[col] = seleccion
 
-# --- Cultivo(s) (manteniendo clasificación múltiple) ---
+# --- Filtro Cultivo(s) ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -140,13 +145,14 @@ def clasificar_cultivo_multiple(texto):
         categorias.append("Otros")
     return categorias
 
-datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
-opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
-seleccion_cultivos = st.sidebar.multiselect("Cultivo(s)", opciones_cultivo, default=opciones_cultivo)
-datos_filtrados = datos_filtrados[
-    datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
-]
-filtros_dict["Cultivo(s)"] = seleccion_cultivos
+if "Cultivo(s)" in datos_filtrados.columns:
+    datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
+    opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
+    seleccion_cultivos = st.sidebar.multiselect("Cultivo(s)", opciones_cultivo, default=opciones_cultivo)
+    datos_filtrados = datos_filtrados[
+        datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
+    ]
+    filtros_dict["Cultivo(s)"] = seleccion_cultivos
 
 # --- Mostrar filtros aplicados ---
 st.markdown("### Filtros Aplicados")
@@ -157,6 +163,7 @@ for nombre, seleccion in filtros_dict.items():
     else:
         filtros_texto.append(f"**{nombre}:** Todos")
 st.markdown(",  ".join(filtros_texto))
+
 
 
 
@@ -175,48 +182,53 @@ col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
 
 # -------------------- Gráficos principales -------------------- #
 if not datos_filtrados.empty:
-    color_arg = "Tipo_parcela" if filtros_dict["Tipo_parcela"] else None
+    color_arg = "Tipo_parcela" if "Tipo_parcela" in datos_filtrados.columns else None
 
     # Bitácoras por año
-    bitacoras_por_anio = (
-        datos_filtrados.groupby(["Anio","Tipo_parcela"]).size().reset_index(name="Bitácoras")
-        if color_arg else datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
-    )
-    fig_bitacoras = px.bar(bitacoras_por_anio, x="Anio", y="Bitácoras", color=color_arg,
-                           title="📋 Número de Bitácoras por Año")
-    st.plotly_chart(fig_bitacoras, use_container_width=True)
+    if "Anio" in datos_filtrados.columns:
+        if color_arg:
+            bitacoras_por_anio = datos_filtrados.groupby(["Anio","Tipo_parcela"]).size().reset_index(name="Bitácoras")
+        else:
+            bitacoras_por_anio = datos_filtrados.groupby("Anio").size().reset_index(name="Bitácoras")
+        fig_bitacoras = px.bar(bitacoras_por_anio, x="Anio", y="Bitácoras", color=color_arg,
+                               title="📋 Número de Bitácoras por Año",
+                               color_discrete_map=color_map_parcela)
+        st.plotly_chart(fig_bitacoras, use_container_width=True)
 
     # Área por año
     if col_area_name:
-        area_por_anio = (
-            datos_filtrados.groupby(["Anio","Tipo_parcela"])[col_area_name].sum().reset_index()
-            if color_arg else datos_filtrados.groupby("Anio")[col_area_name].sum().reset_index()
-        )
+        if color_arg:
+            area_por_anio = datos_filtrados.groupby(["Anio","Tipo_parcela"])[col_area_name].sum().reset_index()
+        else:
+            area_por_anio = datos_filtrados.groupby("Anio")[col_area_name].sum().reset_index()
         fig_area = px.bar(area_por_anio, x="Anio", y=col_area_name, color=color_arg,
                           title="🌿 Área Total de Parcelas por Año",
-                          labels={col_area_name:"Área (ha)"})
+                          labels={col_area_name:"Área (ha)"},
+                          color_discrete_map=color_map_parcela)
         st.plotly_chart(fig_area, use_container_width=True)
 
     # Parcelas por año
-    if "Id_Parcela_Unico" in datos_filtrados.columns:
-        parcelas_por_anio = (
-            datos_filtrados.groupby(["Anio","Tipo_parcela"])["Id_Parcela_Unico"].nunique().reset_index()
-            if color_arg else datos_filtrados.groupby("Anio")["Id_Parcela_Unico"].nunique().reset_index()
-        )
+    if "Id_Parcela_Unico" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
+        if color_arg:
+            parcelas_por_anio = datos_filtrados.groupby(["Anio","Tipo_parcela"])["Id_Parcela_Unico"].nunique().reset_index()
+        else:
+            parcelas_por_anio = datos_filtrados.groupby("Anio")["Id_Parcela_Unico"].nunique().reset_index()
         fig_parcelas = px.bar(parcelas_por_anio, x="Anio", y="Id_Parcela_Unico", color=color_arg,
                               title="🌄 Número de Parcelas por Año",
-                              labels={"Id_Parcela_Unico":"Parcelas"})
+                              labels={"Id_Parcela_Unico":"Parcelas"},
+                              color_discrete_map=color_map_parcela)
         st.plotly_chart(fig_parcelas, use_container_width=True)
 
     # Productores por año
-    if "Id_Productor" in datos_filtrados.columns:
-        productores_por_anio = (
-            datos_filtrados.groupby(["Anio","Tipo_parcela"])["Id_Productor"].nunique().reset_index()
-            if color_arg else datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
-        )
+    if "Id_Productor" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
+        if color_arg:
+            productores_por_anio = datos_filtrados.groupby(["Anio","Tipo_parcela"])["Id_Productor"].nunique().reset_index()
+        else:
+            productores_por_anio = datos_filtrados.groupby("Anio")["Id_Productor"].nunique().reset_index()
         fig_productores = px.bar(productores_por_anio, x="Anio", y="Id_Productor", color=color_arg,
                                  title="👩‍🌾👨‍🌾 Número de Productores por Año",
-                                 labels={"Id_Productor":"Productores"})
+                                 labels={"Id_Productor":"Productores"},
+                                 color_discrete_map=color_map_parcela)
         st.plotly_chart(fig_productores, use_container_width=True)
 else:
     st.info("No hay datos para mostrar con los filtros seleccionados.")
@@ -253,8 +265,10 @@ if {"Genero","Anio","Id_Productor"}.issubset(datos_filtrados.columns):
     fig_gen_pct.update_traces(textposition="inside")
     st.plotly_chart(fig_gen_pct,use_container_width=True)
 
-# -------------------- Mapas y tablas -------------------- #
+# -------------------- Mapas de parcelas -------------------- #
 def crear_figura(datos_filtrados):
+    if not {"Latitud","Longitud","Id_Parcela_Unico"}.issubset(datos_filtrados.columns):
+        return go.Figure()
     datos_geo = datos_filtrados.dropna(subset=["Latitud","Longitud"]).copy()
     if datos_geo.empty:
         return go.Figure()
@@ -278,10 +292,9 @@ def crear_figura(datos_filtrados):
                                            text=df_tipo["Cultivo(s)"], hovertemplate="<b>%{text}</b><extra></extra>",
                                            name=tipo))
     fig.update_layout(mapbox=dict(center={"lat":23.0,"lon":-102.0}, zoom=4, style="carto-positron"),
-                      margin={"l":0,"r":0,"t":50,"b":0}, height=700, width=900,
+                      margin={"l":0,"r":0,"t":50,"b":0}, height=700,
                       title="📍 Distribución de Parcelas Atendidas")
     return fig
 
 st.plotly_chart(crear_figura(datos_filtrados), use_container_width=True)
-
 

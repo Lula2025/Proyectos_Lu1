@@ -24,21 +24,6 @@ def normalizar_texto(texto):
     )
     return texto_norm.strip().capitalize()
 
-# --- Mapa de normalización de cultivos ---
-mapa_cultivos = {
-    "Maiz": "Maíz",
-    "Frijol": "Frijol",
-    "Trigo": "Trigo",
-    "Cebada": "Cebada",
-    "Sorgo": "Sorgo",
-    "Avena": "Avena",
-    "Garbanzo": "Garbanzo",
-    "Soya": "Soya",
-    "Girasol": "Girasol",
-    "Alfalfa": "Alfalfa",
-    "Calabaza": "Calabaza",
-    "Calabacita": "Calabacita"
-}
 
 # --- Leer el archivo ZIP ---
 archivo_zip = "Archivos.2.zip"
@@ -186,7 +171,6 @@ if seleccion_estados and not todos_estados:
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 
-
 # --- Filtro por Tipo de sistema ---
 opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
 seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
@@ -197,13 +181,39 @@ st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', 
 
 
 # --- Filtro por Cultivos ---
-datos_filtrados["Cultivo_Normalizado"] = (
-    datos_filtrados["Cultivo_Principal"].astype(str).apply(normalizar_texto).replace(mapa_cultivos)
-)
-opciones_cultivo = sorted(datos_filtrados["Cultivo_Normalizado"].unique())
-seleccion_cultivos, todos_cultivos = checkbox_list("Cultivo Principal", opciones_cultivo, "cultivo")
-if seleccion_cultivos and not todos_cultivos:
-    datos_filtrados = datos_filtrados[datos_filtrados["Cultivo_Normalizado"].isin(seleccion_cultivos)]
+def clasificar_cultivo_multiple(texto):
+    texto = str(texto).lower()
+    categorias = []
+    if "maíz" in texto or "maiz" in texto:
+        categorias.append("Maíz")
+    if "trigo" in texto:
+        categorias.append("Trigo")
+    if "avena" in texto:
+        categorias.append("Avena")
+    if "cebada" in texto:
+        categorias.append("Cebada")
+    if "frijol" in texto:
+        categorias.append("Frijol")
+    if not categorias:
+        categorias.append("Otros")
+    return categorias
+
+# Crear columna con listas de categorías
+datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
+
+# Opciones fijas
+opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
+seleccion_cultivos = checkbox_con_todo("Cultivo(s)", opciones_cultivo, "cultivo")
+
+# --- Filtrado ---
+if seleccion_cultivos:
+    # Mantener registros donde al menos una categoría seleccionada esté en la lista de esa observación
+    datos_filtrados = datos_filtrados[
+        datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
+    ]
+
+
+
 
 # --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
@@ -215,14 +225,15 @@ def mostrar_filtro(nombre, seleccion, todos):
     elif seleccion:
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
 
+mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, todos_hubs)
 mostrar_filtro("Categoría", seleccion_categorias, todos_categorias)
 mostrar_filtro("Proyectos", seleccion_proyectos, todos_proyectos)
 mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
+mostrar_filtro("Años", seleccion_anio, todos_anio)
 mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
 mostrar_filtro("Estados", seleccion_estados, todos_estados)
-mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, todos_hubs)
-mostrar_filtro("Años", seleccion_anio, todos_anio)
-mostrar_filtro("Cultivos", seleccion_cultivos, todos_cultivos)
+mostrar_filtro("Tipo de sistema", seleccion_estados, todos_Tipo_de_sistema)
+mostrar_filtro("Cultivo(s)", seleccion_cultivos, todos_cultivos)
 
 if filtros_texto:
     st.markdown(",  ".join(filtros_texto))

@@ -720,7 +720,7 @@ fig_estado = px.scatter_mapbox(
     zoom=4.0,
     center={"lat": 23.0, "lon": -102.0},
     mapbox_style="carto-positron",
-    title="📍 Intensidad de Parcelas Atendidas por Estado"
+    title="📍 Intensidad de Parcelas Atendidas"
 )
 
 # --- Ajuste dinámico de escala de colores ---

@@ -110,10 +110,55 @@ def checkbox_list(label, opciones, prefix):
             seleccionadas.append(o)
     return seleccionadas, seleccionar_todos
 
-# Inicializar filtros
+# --- Inicializar datos filtrados ---
 datos_filtrados = datos.copy()
 
-# --- Filtro por HUB Agroecológico ---
+# --- Función de normalización de texto ---
+def normalizar_texto(texto):
+    if pd.isna(texto):
+        return ""
+    texto = str(texto).lower()
+    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
+    return texto
+
+# --- Diccionario de mapas de cultivos (si aplica) ---
+mapa_cultivos = {}
+
+# --- Sidebar de filtros encadenados ---
+st.sidebar.header(" 🔽 Filtros")
+
+# --- Función para casillas múltiples con "seleccionar todos" ---
+def checkbox_list(label, opciones, prefix):
+    st.sidebar.markdown(f"**{label}**")
+    seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
+    
+    seleccionadas = []
+    for o in opciones:
+        default_value = seleccionar_todos
+        key_name = f"{prefix}_{str(o)}"
+        if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
+            seleccionadas.append(o)
+    return seleccionadas, seleccionar_todos
+
+
+# --- Función para multiselect con "Todo" ---
+def checkbox_con_todo(label, opciones, key):
+    col1, col2 = st.sidebar.columns([4, 1])
+
+    with col1:
+        seleccion = st.multiselect(label, opciones, default=opciones, key=f"{key}_multiselect")
+
+    with col2:
+        seleccionar_todo = st.checkbox("Todo", value=True, key=f"{key}_todo")
+
+    if seleccionar_todo:
+        return opciones
+    else:
+        return seleccion
+
+
+# --- Filtros ---
+# HUB Agroecológico
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
 seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
 if seleccion_hubs and not todos_hubs:
@@ -121,32 +166,35 @@ if seleccion_hubs and not todos_hubs:
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Categoría del Proyecto ---
+
+# Categoría del Proyecto
 categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
 seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
 if seleccion_categorias and not todos_categorias:
     datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
-    
-st.markdown("---")  # Esta es la línea de separación
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Proyecto ---
+
+# Proyecto
 proyectos = sorted(datos_filtrados["Proyecto"].unique())
 seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
 if seleccion_proyectos and not todos_proyectos:
     datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
-    
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Ciclo ---
+
+# Ciclo
 ciclos = sorted(datos_filtrados["Ciclo"].unique())
 seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
 if seleccion_ciclos and not todos_ciclos:
     datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
-    
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Año ---
+
+# Año
 opciones_anio = sorted(datos_filtrados["Anio"].unique())
 seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
 if seleccion_anio and not todos_anio:
@@ -154,7 +202,8 @@ if seleccion_anio and not todos_anio:
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Tipo de Parcela ---
+
+# Tipo de Parcela
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
 seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
 if seleccion_tipos_parcela and not todos_tipos_parcela:
@@ -162,7 +211,8 @@ if seleccion_tipos_parcela and not todos_tipos_parcela:
 
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Estado ---
+
+# Estado
 estados = sorted(datos_filtrados["Estado"].unique())
 seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
 if seleccion_estados and not todos_estados:
@@ -171,16 +221,16 @@ if seleccion_estados and not todos_estados:
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 
-# --- Filtro por Tipo de sistema ---
+# Tipo de sistema
 opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
 seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
 if seleccion_sistema and not todos_sistema:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
-    
+
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
 
-# --- Filtro por Cultivos ---
+# Cultivo(s) - categorizado
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -198,21 +248,15 @@ def clasificar_cultivo_multiple(texto):
         categorias.append("Otros")
     return categorias
 
-# Crear columna con listas de categorías
 datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
 
-# Opciones fijas
 opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
 seleccion_cultivos = checkbox_con_todo("Cultivo(s)", opciones_cultivo, "cultivo")
 
-# --- Filtrado ---
 if seleccion_cultivos:
-    # Mantener registros donde al menos una categoría seleccionada esté en la lista de esa observación
     datos_filtrados = datos_filtrados[
         datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
     ]
-
-
 
 
 # --- Resumen de filtros aplicados ---
@@ -232,14 +276,13 @@ mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
 mostrar_filtro("Años", seleccion_anio, todos_anio)
 mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
 mostrar_filtro("Estados", seleccion_estados, todos_estados)
-mostrar_filtro("Tipo de sistema", seleccion_estados, todos_Tipo_de_sistema)
-mostrar_filtro("Cultivo(s)", seleccion_cultivos, todos_cultivos)
+mostrar_filtro("Tipo de sistema", seleccion_sistema, todos_sistema)
+mostrar_filtro("Cultivo(s)", seleccion_cultivos, False)  # Aquí no usamos "todos_cultivos" porque lo maneja multiselect
 
 if filtros_texto:
     st.markdown(",  ".join(filtros_texto))
 else:
     st.markdown("No se aplicaron filtros, se muestran todos los datos.")
-
 
 
 # --- Resumen de cifras totales ---

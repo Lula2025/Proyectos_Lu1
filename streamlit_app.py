@@ -79,36 +79,7 @@ color_map_parcela = {
 }
 
 
-# --- Inicializar datos filtrados ---
-datos_filtrados = datos.copy()
 
-# --- Función de normalización de texto (si no está definida) ---
-def normalizar_texto(texto):
-    if pd.isna(texto):
-        return ""
-    texto = str(texto).lower()
-    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
-    return texto
-
-# --- Diccionario de mapas de cultivos (ejemplo) ---
-mapa_cultivos = {}  # Completa con tus equivalencias si aplica
-
-# --- Sidebar de filtros encadenados mejorado ---
-st.sidebar.header(" 🔽 Filtros")
-
-# Función para checkboxes con opción de seleccionar todos
-def checkbox_list(label, opciones, prefix):
-    """Crea un grupo de checkboxes con opción de seleccionar todo"""
-    st.sidebar.markdown(f"**{label}**")
-    seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
-    
-    seleccionadas = []
-    for o in opciones:
-        default_value = seleccionar_todos
-        key_name = f"{prefix}_{str(o)}"
-        if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
-            seleccionadas.append(o)
-    return seleccionadas, seleccionar_todos
     
 
 # --- Inicializar datos filtrados ---
@@ -225,6 +196,7 @@ if seleccion_cultivos and not todos_cultivos:
     datos_filtrados = datos_filtrados[
         datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
     ]
+    
 
 # --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")

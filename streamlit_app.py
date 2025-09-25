@@ -48,125 +48,95 @@ with col1:
 with col3:
     st.image("assets/ea.png", use_container_width=True)
 
+# ----------------------------
 # --- Preprocesamiento ---
+# ----------------------------
 columnas_requeridas = [
     "Anio", "Categoria_Proyecto", "Ciclo", "Estado",
-    "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)", "Proyecto"
+    "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)",
+    "Proyecto", "Id_Parcela(Unico)", "Id_Productor", "Genero", "Latitud", "Longitud", "Cultivo(s)", "Tipo de sistema", "HUB_Agroecológico"
 ]
+
 for columna in columnas_requeridas:
     if columna not in datos.columns:
         st.error(f"La columna '{columna}' no existe en el archivo CSV.")
         st.stop()
     datos[columna] = datos[columna].fillna("NA" if datos[columna].dtype == "object" else 0)
 
-# Convertir columnas categóricas a string
 columnas_categoricas = ["Categoria_Proyecto", "Ciclo", "Estado", "Tipo_Regimen_Hidrico", "Tipo_parcela", "Proyecto"]
 for col in columnas_categoricas:
     datos[col] = datos[col].astype(str)
 
 datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
-datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
-    datos["Area_total_de_la_parcela(ha)"], errors="coerce"
-).fillna(0)
-
+datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(datos["Area_total_de_la_parcela(ha)"], errors="coerce").fillna(0)
 datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
 
-# --- Crear mapa de colores fijo para Tipo_parcela ---
 color_map_parcela = {
-    "Área de Impacto": "#87CEEB",   # azul  
-    "Área de extensión": "#2ca02c",  # Verde
-    "Módulo": "#d62728" ,           # Rojo
+    "Área de Impacto": "#87CEEB",
+    "Área de extensión": "#2ca02c",
+    "Módulo": "#d62728",
 }
 
+# ----------------------------
+# --- Filtros con últimos 2 años preseleccionados ---
+# ----------------------------
+ultimos_anios = sorted(datos["Anio"].dropna().unique())[-2:]
+datos_filtrados = datos[datos["Anio"].isin(ultimos_anios)].copy()
 
-
-    
-
-# --- Inicializar datos filtrados ---
-datos_filtrados = datos.copy()
-
-# --- Función de normalización de texto (si no está definida) ---
-def normalizar_texto(texto):
-    if pd.isna(texto):
-        return ""
-    texto = str(texto).lower()
-    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
-    return texto
-
-# --- Sidebar de filtros encadenados ---
 st.sidebar.header(" 🔽 Filtros")
 
-# Función para checkboxes con opción de seleccionar todos
-def checkbox_list(label, opciones, prefix):
-    """Crea un grupo de checkboxes con opción de seleccionar/deseleccionar todo"""
+def checkbox_list(label, opciones, prefix, seleccion_inicial=None):
     st.sidebar.markdown(f"**{label}**")
     seleccionar_todos = st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
-    
     seleccionadas = []
     for o in opciones:
-        default_value = seleccionar_todos
+        default_value = seleccionar_todos or (seleccion_inicial is not None and o in seleccion_inicial)
         key_name = f"{prefix}_{str(o)}"
         if st.sidebar.checkbox(str(o), value=default_value, key=key_name):
             seleccionadas.append(o)
     return seleccionadas, seleccionar_todos
 
-# --- Filtro por HUB Agroecológico ---
+# --- Filtros encadenados ---
+opciones_anio = sorted(datos["Anio"].unique())
+seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio", seleccion_inicial=ultimos_anios)
+datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)] if seleccion_anio and not todos_anio else datos_filtrados
+
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
 seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
 if seleccion_hubs and not todos_hubs:
     datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Categoría del Proyecto ---
 categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
 seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
 if seleccion_categorias and not todos_categorias:
     datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Proyecto ---
 proyectos = sorted(datos_filtrados["Proyecto"].unique())
 seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
 if seleccion_proyectos and not todos_proyectos:
     datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Ciclo ---
 ciclos = sorted(datos_filtrados["Ciclo"].unique())
 seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
 if seleccion_ciclos and not todos_ciclos:
     datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Año ---
-opciones_anio = sorted(datos_filtrados["Anio"].unique())
-seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
-if seleccion_anio and not todos_anio:
-    datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
-
-# --- Filtro por Tipo de Parcela ---
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
 seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
 if seleccion_tipos_parcela and not todos_tipos_parcela:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Estado ---
 estados = sorted(datos_filtrados["Estado"].unique())
 seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
 if seleccion_estados and not todos_estados:
     datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Tipo de sistema ---
 opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
 seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
 if seleccion_sistema and not todos_sistema:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Cultivo(s) ---
+# --- Cultivos ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -184,49 +154,41 @@ def clasificar_cultivo_multiple(texto):
         categorias.append("Otros")
     return categorias
 
-# Crear columna con categorías
 datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
-
-# Opciones fijas
 opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
 seleccion_cultivos, todos_cultivos = checkbox_list("Cultivo(s)", opciones_cultivo, "cultivo")
-
-# Filtrado
 if seleccion_cultivos and not todos_cultivos:
     datos_filtrados = datos_filtrados[
         datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
     ]
-    
 
-# --- Resumen de filtros aplicados ---
+# --- Resumen de filtros ---
 st.markdown("### Filtros Aplicados")
 filtros_texto = []
-
 def mostrar_filtro(nombre, seleccion, todos):
     if todos:
         filtros_texto.append(f"**{nombre}:** Todos")
     elif seleccion:
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
+        
+for n, s, t in [
+    ("Años", seleccion_anio, todos_anio),
+    ("HUBs Agroecológicos", seleccion_hubs, todos_hubs),
+    ("Categoría", seleccion_categorias, todos_categorias),
+    ("Proyectos", seleccion_proyectos, todos_proyectos),
+    ("Ciclos", seleccion_ciclos, todos_ciclos),
+    ("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela),
+    ("Estados", seleccion_estados, todos_estados),
+    ("Tipo de sistema", seleccion_sistema, todos_sistema),
+    ("Cultivo(s)", seleccion_cultivos, todos_cultivos)
+]:
+    mostrar_filtro(n, s, t)
 
-mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, todos_hubs)
-mostrar_filtro("Categoría", seleccion_categorias, todos_categorias)
-mostrar_filtro("Proyectos", seleccion_proyectos, todos_proyectos)
-mostrar_filtro("Ciclos", seleccion_ciclos, todos_ciclos)
-mostrar_filtro("Años", seleccion_anio, todos_anio)
-mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, todos_tipos_parcela)
-mostrar_filtro("Estados", seleccion_estados, todos_estados)
-mostrar_filtro("Tipo de sistema", seleccion_sistema, todos_sistema)
-mostrar_filtro("Cultivo(s)", seleccion_cultivos, todos_cultivos)
+st.markdown(",  ".join(filtros_texto) if filtros_texto else "No se aplicaron filtros, se muestran todos los datos.")
 
-if filtros_texto:
-    st.markdown(",  ".join(filtros_texto))
-else:
-    st.markdown("No se aplicaron filtros, se muestran todos los datos.")
-    
-
-# --- Resumen de cifras totales ---
-# st.markdown("### Informe de acuerdo a los filtros")
-
+# ----------------------------
+# --- Métricas principales ---
+# ----------------------------
 total_bitacoras = len(datos_filtrados)
 total_area = datos_filtrados["Area_total_de_la_parcela(ha)"].sum()
 total_parcelas = datos_filtrados["Id_Parcela(Unico)"].nunique() if "Id_Parcela(Unico)" in datos_filtrados.columns else 0
@@ -237,7 +199,6 @@ col_r1.metric("📋 Total de Bitácoras", f"{total_bitacoras:,}")
 col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}")
 col_r3.metric("🌄 Número de Parcelas Totales", f"{total_parcelas:,}")
 col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
-
 
 
 st.markdown("---")  # Esta es la línea de separación

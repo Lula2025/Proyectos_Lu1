@@ -81,34 +81,14 @@ color_map_parcela = {
 
  
 
-# -------------------- Inicializar datos -------------------- #
-datos_filtrados = datos.copy()
+# --- Inicializar filtros ---
+filtros_dict = {}
 
-# Normalizar nombres de columnas
-datos_filtrados.columns = (
-    datos_filtrados.columns
-    .str.strip()
-    .str.replace(" ", "_")
-    .str.replace("(", "")
-    .str.replace(")", "")
-)
-
-# Asegurar que Año sea numérico
-datos_filtrados["Anio"] = pd.to_numeric(datos_filtrados["Anio"], errors="coerce").astype("Int64")
+# --- Filtro Año (checkboxes con selección de los últimos 2 años por defecto) ---
 ultimos_anios = sorted(datos_filtrados["Anio"].dropna().unique())[-2:]
 
-# -------------------- Función de normalización -------------------- #
-def normalizar_texto(texto):
-    if pd.isna(texto):
-        return ""
-    texto = str(texto).lower()
-    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
-    return texto
-
-# -------------------- Sidebar de filtros -------------------- #
-st.sidebar.header(" 🔽 Filtros")
-
 def checkbox_list(label, opciones, seleccion_previa=None):
+    """Retorna lista de opciones seleccionadas con checkboxes."""
     st.sidebar.markdown(f"**{label}**")
     if seleccion_previa is None:
         seleccion_previa = opciones.copy()
@@ -119,29 +99,30 @@ def checkbox_list(label, opciones, seleccion_previa=None):
             seleccionadas.append(o)
     return seleccionadas
 
-# --- Año ---
 opciones_anio = sorted(datos_filtrados["Anio"].dropna().unique())
 seleccion_anio = checkbox_list("Año", opciones_anio, seleccion_previa=ultimos_anios)
 datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 
-# --- Filtros encadenados ---
+# --- Filtros encadenados (solo columnas que existen) ---
+columnas_filtro = ["HUB_Agroecológico", "Categoria_Proyecto", "Proyecto", "Ciclo",
+                   "Tipo_parcela", "Estado", "Tipo de sistema"]
+
+# Función multiselect segura
 def filtro_multiselect(columna, label):
+    if columna not in datos_filtrados.columns:
+        st.warning(f"El filtro '{label}' no está disponible (columna no existe).")
+        return []
     opciones = sorted(datos_filtrados[columna].dropna().unique())
     seleccion = st.sidebar.multiselect(label, opciones, default=opciones)
     return seleccion
 
-filtros_dict = {}
-columnas_filtro = ["HUB_Agroecologico", "Categoria_Proyecto", "Proyecto", "Ciclo",
-                   "Tipo_parcela", "Estado", "Tipo_de_sistema"]
-
 for col in columnas_filtro:
-    filtros_dict[col] = filtro_multiselect(col, col.replace("_"," "))
-    if filtros_dict[col]:
-        datos_filtrados = datos_filtrados[datos_filtrados[col].isin(filtros_dict[col])]
-    else:
-        st.warning(f"No hay datos disponibles para el filtro {col}.")
+    seleccion = filtro_multiselect(col, col.replace("_"," "))
+    if seleccion:
+        datos_filtrados = datos_filtrados[datos_filtrados[col].isin(seleccion)]
+    filtros_dict[col] = seleccion
 
-# -------------------- Cultivo -------------------- #
+# --- Cultivo(s) (manteniendo clasificación múltiple) ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -165,12 +146,19 @@ seleccion_cultivos = st.sidebar.multiselect("Cultivo(s)", opciones_cultivo, defa
 datos_filtrados = datos_filtrados[
     datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
 ]
+filtros_dict["Cultivo(s)"] = seleccion_cultivos
 
-# -------------------- Mostrar filtros aplicados -------------------- #
+# --- Mostrar filtros aplicados ---
 st.markdown("### Filtros Aplicados")
-filtros_texto = [f"**{k}:** {', '.join(v)}" for k,v in filtros_dict.items()]
-filtros_texto.append(f"**Cultivos:** {', '.join(seleccion_cultivos)}")
+filtros_texto = []
+for nombre, seleccion in filtros_dict.items():
+    if seleccion:
+        filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
+    else:
+        filtros_texto.append(f"**{nombre}:** Todos")
 st.markdown(",  ".join(filtros_texto))
+
+
 
 # -------------------- Resumen de cifras -------------------- #
 col_area_name = next((c for c in datos_filtrados.columns if "Area_total" in c), None)

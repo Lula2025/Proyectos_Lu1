@@ -82,13 +82,13 @@ color_map_parcela = {
 
     
 
-# --- Inicializar datos y seleccionar últimos 2 años ---
+# --- Inicializar datos ---
 datos_filtrados = datos.copy()
 datos_filtrados["Anio"] = pd.to_numeric(datos_filtrados["Anio"], errors="coerce").astype("Int64")
 ultimos_anios = sorted(datos_filtrados["Anio"].dropna().unique())[-2:]
 datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(ultimos_anios)]
 
-# --- Función de normalización de texto ---
+# --- Función de normalización ---
 def normalizar_texto(texto):
     if pd.isna(texto):
         return ""
@@ -100,10 +100,7 @@ def normalizar_texto(texto):
 st.sidebar.header(" 🔽 Filtros")
 
 def checkbox_list(label, opciones, prefix, default_seleccionadas=None):
-    """
-    Checkbox con opción de seleccionar todos.
-    default_seleccionadas: lista de valores que deben iniciar marcados
-    """
+    """Checkbox con opción de seleccionar todos y valores preseleccionados."""
     st.sidebar.markdown(f"**{label}**")
     seleccionar_todos = False if default_seleccionadas else st.sidebar.checkbox(f"Seleccionar todos {label}", value=True, key=f"{prefix}_all")
     seleccionadas = []
@@ -114,56 +111,62 @@ def checkbox_list(label, opciones, prefix, default_seleccionadas=None):
             seleccionadas.append(o)
     return seleccionadas, seleccionar_todos
 
-# --- Filtro por Año ---
+# --- Años ---
 opciones_anio = sorted(datos["Anio"].dropna().unique())
 seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio", default_seleccionadas=ultimos_anios)
 datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtros encadenados ---
+# --- HUBs ---
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
 seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
 if seleccion_hubs and not todos_hubs:
     datos_filtrados = datos_filtrados[datos_filtrados["HUB_Agroecológico"].isin(seleccion_hubs)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Categoría ---
 categorias = sorted(datos_filtrados["Categoria_Proyecto"].unique())
 seleccion_categorias, todos_categorias = checkbox_list("Categoría del Proyecto", categorias, "categoria")
 if seleccion_categorias and not todos_categorias:
     datos_filtrados = datos_filtrados[datos_filtrados["Categoria_Proyecto"].isin(seleccion_categorias)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Proyecto ---
 proyectos = sorted(datos_filtrados["Proyecto"].unique())
 seleccion_proyectos, todos_proyectos = checkbox_list("Proyecto", proyectos, "proyecto")
 if seleccion_proyectos and not todos_proyectos:
     datos_filtrados = datos_filtrados[datos_filtrados["Proyecto"].isin(seleccion_proyectos)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Ciclo ---
 ciclos = sorted(datos_filtrados["Ciclo"].unique())
 seleccion_ciclos, todos_ciclos = checkbox_list("Ciclo", ciclos, "ciclo")
 if seleccion_ciclos and not todos_ciclos:
     datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Tipo de Parcela ---
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
 seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")
 if seleccion_tipos_parcela and not todos_tipos_parcela:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(seleccion_tipos_parcela)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Estado ---
 estados = sorted(datos_filtrados["Estado"].unique())
 seleccion_estados, todos_estados = checkbox_list("Estado", estados, "estado")
 if seleccion_estados and not todos_estados:
     datos_filtrados = datos_filtrados[datos_filtrados["Estado"].isin(seleccion_estados)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
+# --- Tipo de sistema ---
 opciones_sistema = sorted(datos_filtrados["Tipo de sistema"].unique())
 seleccion_sistema, todos_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema")
 if seleccion_sistema and not todos_sistema:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-# --- Filtro por Cultivo ---
+# --- Cultivo ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -197,7 +200,6 @@ def mostrar_filtro(nombre, seleccion, todos):
         filtros_texto.append(f"**{nombre}:** Todos")
     elif seleccion:
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
-
 for n, s, t in [
     ("HUBs Agroecológicos", seleccion_hubs, todos_hubs),
     ("Categoría", seleccion_categorias, todos_categorias),
@@ -210,7 +212,6 @@ for n, s, t in [
     ("Cultivo(s)", seleccion_cultivos, todos_cultivos)
 ]:
     mostrar_filtro(n, s, t)
-
 if filtros_texto:
     st.markdown(",  ".join(filtros_texto))
 else:

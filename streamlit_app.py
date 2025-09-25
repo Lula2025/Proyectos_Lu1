@@ -427,7 +427,7 @@ proyecto_max = (
     .set_index("Anio")["Proyecto"]
 )
 
-# Crear tabla con MultiIndex (Categoria -> Proyecto) como columnas
+# Crear tabla pivotada con MultiIndex
 conteo_pivot = conteo_mix.pivot_table(
     index="Anio",
     columns=["Categoria_Proyecto", "Proyecto"],
@@ -435,36 +435,30 @@ conteo_pivot = conteo_mix.pivot_table(
     fill_value=0
 )
 
-# Insertar "Numero de Bitacoras" al inicio
+# Insertar totales al inicio
 conteo_pivot.insert(0, "🔢 Bitacoras ", total_anual.set_index("Anio")["Total"])
-
-# Insertar "Proyecto Dominante" justo después (posición 1)
 conteo_pivot.insert(1, "🏆 Proyecto Dominante", proyecto_max)
 
-
-# Convertir todos los valores a texto sin símbolo % (solo valores numéricos)
+# --- Aplanar columnas MultiIndex ---
 tabla_final = conteo_pivot.copy()
+tabla_final.columns = [
+    " / ".join([str(i) for i in col]) if isinstance(col, tuple) else str(col) 
+    for col in tabla_final.columns
+]
 
+# Redondear valores y mantener totales como enteros
 for col in tabla_final.columns:
     if col == "🔢 Bitacoras ":
-        # Mantener como entero
         tabla_final[col] = tabla_final[col].apply(lambda x: int(x) if pd.notnull(x) else x)
-    elif tabla_final[col].dtype in [float, int]:
-        # Redondear a dos decimales
+    else:
         tabla_final[col] = tabla_final[col].apply(lambda x: round(x, 2) if pd.notnull(x) else x)
 
-
-
-# --- Crear copia de la tabla con columnas modificadas ---
-tabla_tooltip = tabla_final.copy()
-
-
-# Mostrar tabla final sin % en ningún valor
+# --- Mostrar tabla ---
 st.markdown("### 📋 Número Total de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
-st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(600, 40 * len(tabla_final)))
+st.dataframe(tabla_final.reset_index(), use_container_width=True, height=min(600, 40 * len(tabla_final)))
 
 
-
+# ---
 
 # --- Tabla de porcentajes por año y categoría del proyecto ---
 st.markdown("### 📋 Distribución(%) por Categoría del Proyecto, por Año")

@@ -79,8 +79,7 @@ color_map_parcela = {
 }
 
 
-
-    
+ 
 
 # --- Inicializar datos ---
 datos_filtrados = datos.copy()

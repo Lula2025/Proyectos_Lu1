@@ -715,12 +715,7 @@ def crear_figura(datos_filtrados):
     return fig
 
 # --- --- --- Streamlit: filtros y figura --- --- --- #
-tipo_seleccionado = st.multiselect(
-    "Seleccionar Tipo de Parcela",
-    options=datos_filtrados["Tipo_parcela"].unique(),
-    default=datos_filtrados["Tipo_parcela"].unique()
-)
-datos_filtrados_filtrado = datos_filtrados[datos_filtrados["Tipo_parcela"].isin(tipo_seleccionado)]
+
 
 fig_mapa_geo = crear_figura(datos_filtrados_filtrado)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)

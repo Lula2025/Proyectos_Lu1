@@ -116,6 +116,16 @@ def checkbox_list(label, opciones, prefix):
     return seleccionadas, seleccionar_todos
 
 # --- Filtros encadenados ---
+
+opciones_anio = sorted(datos["Anio"].dropna().unique())
+seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
+# Preseleccionar últimos 2 años si no se selecciona todo
+if not todos_anio and not seleccion_anio:
+    seleccion_anio = ultimos_anios
+datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
+st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
+
 hubs = sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique())
 seleccion_hubs, todos_hubs = checkbox_list("HUB Agroecológico", hubs, "hub")
 if seleccion_hubs and not todos_hubs:
@@ -140,13 +150,7 @@ if seleccion_ciclos and not todos_ciclos:
     datos_filtrados = datos_filtrados[datos_filtrados["Ciclo"].isin(seleccion_ciclos)]
 st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
 
-opciones_anio = sorted(datos["Anio"].dropna().unique())
-seleccion_anio, todos_anio = checkbox_list("Año", opciones_anio, "anio")
-# Preseleccionar últimos 2 años si no se selecciona todo
-if not todos_anio and not seleccion_anio:
-    seleccion_anio = ultimos_anios
-datos_filtrados = datos_filtrados[datos_filtrados["Anio"].isin(seleccion_anio)]
-st.sidebar.markdown('<hr style="border:1.5px dashed #4169E1; margin:15px 0;">', unsafe_allow_html=True)
+
 
 tipos_parcela = sorted(datos_filtrados["Tipo_parcela"].unique())
 seleccion_tipos_parcela, todos_tipos_parcela = checkbox_list("Tipo de Parcela", tipos_parcela, "parcela")

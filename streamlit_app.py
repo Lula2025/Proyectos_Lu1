@@ -639,7 +639,7 @@ def crear_figura(datos_filtrados):
         margin={"l":0,"r":0,"t":50,"b":0},
         height=700,
         width=900,
-        title="📍 Distribución de Parcelas Atendidas por Estado",
+        title="📍 Distribución de Parcelas Atendidas",
         legend=dict(
             title="Tipo de Parcela",
             orientation="v",
@@ -720,7 +720,7 @@ fig_estado = px.scatter_mapbox(
     zoom=4.0,
     center={"lat": 23.0, "lon": -102.0},
     mapbox_style="carto-positron",
-    title="📍 Intensidad de Parcelas Atendidas"
+    title="📍 Intensidad de Parcelas Atendidas por Estado"
 )
 
 # --- Ajuste dinámico de escala de colores ---

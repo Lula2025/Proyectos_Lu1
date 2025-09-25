@@ -82,19 +82,78 @@ color_map_parcela = {
 
     
 
-# --- Inicializar datos ---
-datos = datos.copy()
-datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce").astype("Int64")
+# --- Preprocesamiento ---
+columnas_requeridas = [
+    "Anio", "Categoria_Proyecto", "Ciclo", "Estado",
+    "Tipo_Regimen_Hidrico", "Tipo_parcela", "Area_total_de_la_parcela(ha)", "Proyecto"
+]
+for columna in columnas_requeridas:
+    if columna not in datos.columns:
+        st.error(f"La columna '{columna}' no existe en el archivo CSV.")
+        st.stop()
+    datos[columna] = datos[columna].fillna("NA" if datos[columna].dtype == "object" else 0)
 
-# --- Normalizar texto ---
-def normalizar_texto(texto):
-    if pd.isna(texto):
-        return ""
-    texto = str(texto).lower()
-    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
-    return texto
+# Convertir columnas categóricas a string
+columnas_categoricas = ["Categoria_Proyecto", "Ciclo", "Estado", "Tipo_Regimen_Hidrico", "Tipo_parcela", "Proyecto"]
+for col in columnas_categoricas:
+    datos[col] = datos[col].astype(str)
 
-# --- Clasificación de cultivos ---
+datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
+datos["Area_total_de_la_parcela(ha)"] = pd.to_numeric(
+    datos["Area_total_de_la_parcela(ha)"], errors="coerce"
+).fillna(0)
+
+# Acotar rango de años válidos
+datos = datos[(datos["Anio"] >= 2012) & (datos["Anio"] <= 2025)]
+
+# --- Crear mapa de colores fijo para Tipo_parcela ---
+color_map_parcela = {
+    "Área de Impacto": "#87CEEB",   # Azul
+    "Área de extensión": "#2ca02c", # Verde
+    "Módulo": "#d62728",            # Rojo
+}
+
+# --- Inicializar filtros ---
+filtros_dict = {}
+
+# --- Filtro Año (checkboxes con selección de los últimos 2 años por defecto) ---
+ultimos_anios = sorted(datos["Anio"].dropna().unique())[-2:]
+
+def checkbox_list(label, opciones, seleccion_previa=None):
+    """Retorna lista de opciones seleccionadas con checkboxes."""
+    st.sidebar.markdown(f"**{label}**")
+    if seleccion_previa is None:
+        seleccion_previa = opciones.copy()
+    seleccionadas = []
+    for o in opciones:
+        default_value = o in seleccion_previa
+        if st.sidebar.checkbox(str(o), value=default_value, key=f"{label}_{o}"):
+            seleccionadas.append(o)
+    return seleccionadas
+
+opciones_anio = sorted(datos["Anio"].dropna().unique())
+seleccion_anio = checkbox_list("Año", opciones_anio, seleccion_previa=ultimos_anios)
+datos_filtrados = datos[datos["Anio"].isin(seleccion_anio)]
+
+# --- Filtros encadenados (solo columnas que existen) ---
+columnas_filtro = ["HUB_Agroecológico", "Categoria_Proyecto", "Proyecto", "Ciclo",
+                   "Tipo_parcela", "Estado", "Tipo de sistema"]
+
+def filtro_multiselect(columna, label):
+    if columna not in datos_filtrados.columns:
+        st.warning(f"El filtro '{label}' no está disponible (columna no existe).")
+        return []
+    opciones = sorted(datos_filtrados[columna].dropna().unique())
+    seleccion = st.sidebar.multiselect(label, opciones, default=opciones)
+    return seleccion
+
+for col in columnas_filtro:
+    seleccion = filtro_multiselect(col, col.replace("_", " "))
+    if seleccion:
+        datos_filtrados = datos_filtrados[datos_filtrados[col].isin(seleccion)]
+    filtros_dict[col] = seleccion
+
+# --- Cultivo(s) (manteniendo clasificación múltiple) ---
 def clasificar_cultivo_multiple(texto):
     texto = str(texto).lower()
     categorias = []
@@ -112,110 +171,39 @@ def clasificar_cultivo_multiple(texto):
         categorias.append("Otros")
     return categorias
 
-datos["Cultivo_Categorizado"] = datos["Cultivo(s)"].apply(clasificar_cultivo_multiple)
-
-# --- Sidebar ---
-st.sidebar.header(" 🔽 Filtros")
-
-# --- Últimos 2 años ---
-ultimos_anios = sorted(datos["Anio"].dropna().unique())[-2:]
-
-# --- Función para filtrar dinámicamente ---
-def aplicar_filtros(df, filtros_dict):
-    df_filtrado = df.copy()
-    
-    # Filtro por Año
-    if filtros_dict.get("Año"):
-        df_filtrado = df_filtrado[df_filtrado["Anio"].isin(filtros_dict["Año"])]
-    # Filtro por HUB
-    if filtros_dict.get("HUB_Agroecológico"):
-        df_filtrado = df_filtrado[df_filtrado["HUB_Agroecológico"].isin(filtros_dict["HUB_Agroecológico"])]
-    # Categoría
-    if filtros_dict.get("Categoria_Proyecto"):
-        df_filtrado = df_filtrado[df_filtrado["Categoria_Proyecto"].isin(filtros_dict["Categoria_Proyecto"])]
-    # Proyecto
-    if filtros_dict.get("Proyecto"):
-        df_filtrado = df_filtrado[df_filtrado["Proyecto"].isin(filtros_dict["Proyecto"])]
-    # Ciclo
-    if filtros_dict.get("Ciclo"):
-        df_filtrado = df_filtrado[df_filtrado["Ciclo"].isin(filtros_dict["Ciclo"])]
-    # Tipo de Parcela
-    if filtros_dict.get("Tipo_parcela"):
-        df_filtrado = df_filtrado[df_filtrado["Tipo_parcela"].isin(filtros_dict["Tipo_parcela"])]
-    # Estado
-    if filtros_dict.get("Estado"):
-        df_filtrado = df_filtrado[df_filtrado["Estado"].isin(filtros_dict["Estado"])]
-    # Tipo de sistema
-    if filtros_dict.get("Tipo de sistema"):
-        df_filtrado = df_filtrado[df_filtrado["Tipo de sistema"].isin(filtros_dict["Tipo de sistema"])]
-    # Cultivo
-    if filtros_dict.get("Cultivo(s)"):
-        df_filtrado = df_filtrado[
-            df_filtrado["Cultivo_Categorizado"].apply(lambda cats: any(c in filtros_dict["Cultivo(s)"] for c in cats))
-        ]
-    return df_filtrado
-
-# --- Diccionario de filtros ---
-filtros = {}
-
-# --- Año ---
-opciones_anio = sorted(datos["Anio"].dropna().unique())
-filtros["Año"] = st.sidebar.multiselect("Año", opciones_anio, default=ultimos_anios)
-
-# Aplicar filtros iniciales para encadenar las opciones
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-# --- Filtros encadenados ---
-filtros["HUB_Agroecológico"] = st.sidebar.multiselect("HUB Agroecológico",
-                                                       sorted(datos_filtrados["HUB_Agroecológico"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-filtros["Categoria_Proyecto"] = st.sidebar.multiselect("Categoría del Proyecto",
-                                                        sorted(datos_filtrados["Categoria_Proyecto"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-filtros["Proyecto"] = st.sidebar.multiselect("Proyecto",
-                                              sorted(datos_filtrados["Proyecto"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-filtros["Ciclo"] = st.sidebar.multiselect("Ciclo",
-                                          sorted(datos_filtrados["Ciclo"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-filtros["Tipo_parcela"] = st.sidebar.multiselect("Tipo de Parcela",
-                                                 sorted(datos_filtrados["Tipo_parcela"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-filtros["Estado"] = st.sidebar.multiselect("Estado",
-                                           sorted(datos_filtrados["Estado"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-filtros["Tipo de sistema"] = st.sidebar.multiselect("Tipo de sistema",
-                                                    sorted(datos_filtrados["Tipo de sistema"].dropna().unique()))
-datos_filtrados = aplicar_filtros(datos, filtros)
-
-opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
-filtros["Cultivo(s)"] = st.sidebar.multiselect("Cultivo(s)", opciones_cultivo)
-datos_filtrados = aplicar_filtros(datos, filtros)
+if "Cultivo(s)" in datos_filtrados.columns:
+    datos_filtrados["Cultivo_Categorizado"] = datos_filtrados["Cultivo(s)"].apply(clasificar_cultivo_multiple)
+    opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
+    seleccion_cultivos = st.sidebar.multiselect("Cultivo(s)", opciones_cultivo, default=opciones_cultivo)
+    datos_filtrados = datos_filtrados[
+        datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
+    ]
+    filtros_dict["Cultivo(s)"] = seleccion_cultivos
 
 # --- Mostrar filtros aplicados ---
 st.markdown("### Filtros Aplicados")
 filtros_texto = []
-for nombre, seleccion in filtros.items():
+
+# Año
+if seleccion_anio:
+    filtros_texto.append(f"**Año:** {', '.join(str(a) for a in seleccion_anio)}")
+else:
+    filtros_texto.append("**Año:** Todos")
+
+# Otros filtros
+for nombre, seleccion in filtros_dict.items():
     if seleccion:
         filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
     else:
         filtros_texto.append(f"**{nombre}:** Todos")
+
 st.markdown(",  ".join(filtros_texto))
 
-    
-
-# --- Resumen de cifras totales ---
-# st.markdown("### Informe de acuerdo a los filtros")
-
+# -------------------- Resumen de cifras -------------------- #
+col_area_name = next((c for c in datos_filtrados.columns if "Area_total" in c), None)
+total_area = datos_filtrados[col_area_name].sum() if col_area_name else 0
 total_bitacoras = len(datos_filtrados)
-total_area = datos_filtrados["Area_total_de_la_parcela(ha)"].sum()
-total_parcelas = datos_filtrados["Id_Parcela(Unico)"].nunique() if "Id_Parcela(Unico)" in datos_filtrados.columns else 0
+total_parcelas = datos_filtrados["Id_Parcela_Unico"].nunique() if "Id_Parcela_Unico" in datos_filtrados.columns else 0
 total_productores = datos_filtrados["Id_Productor"].nunique() if "Id_Productor" in datos_filtrados.columns else 0
 
 col_r1, col_r2, col_r3, col_r4 = st.columns(4)
@@ -223,7 +211,6 @@ col_r1.metric("📋 Total de Bitácoras", f"{total_bitacoras:,}")
 col_r2.metric("🌿 Área Total (ha)", f"{total_area:,.2f}")
 col_r3.metric("🌄 Número de Parcelas Totales", f"{total_parcelas:,}")
 col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
-
 
 
 st.markdown("---")  # Esta es la línea de separación

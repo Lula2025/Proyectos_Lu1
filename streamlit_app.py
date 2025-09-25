@@ -712,12 +712,9 @@ def crear_figura(datos_filtrados):
         )
     )
 
-    return fig
 
 # --- --- --- Streamlit: filtros y figura --- --- --- #
 
-
-fig_mapa_geo = crear_figura(datos_filtrados_filtrado)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 

@@ -164,32 +164,29 @@ seleccion_sistema = checkbox_list("Tipo de sistema", opciones_sistema, "sistema"
 if seleccion_sistema:
     datos_filtrados = datos_filtrados[datos_filtrados["Tipo de sistema"].isin(seleccion_sistema)]
 
-# --- Filtro por Cultivo(s) ---
-opciones_cultivo = ["Maíz", "Trigo", "Avena", "Cebada", "Frijol", "Otros"]
-seleccion_cultivos = checkbox_list("Cultivo(s)", opciones_cultivo, "cultivo")
-if seleccion_cultivos:
-    datos_filtrados = datos_filtrados[
-        datos_filtrados["Cultivo_Categorizado"].apply(lambda cats: any(c in seleccion_cultivos for c in cats))
-    ]
-
 # --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
 filtros_texto = []
-def mostrar_filtro(nombre, seleccion):
+
+def mostrar_filtro(nombre, seleccion, todas_opciones):
     if seleccion:
-        filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
+        if set(seleccion) == set(todas_opciones):
+            filtros_texto.append(f"**{nombre}:** Todos")
+        else:
+            filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
     else:
         filtros_texto.append(f"**{nombre}:** Todos")
 
-mostrar_filtro("Años", seleccion_anio)
-mostrar_filtro("HUBs Agroecológicos", seleccion_hubs)
-mostrar_filtro("Categoría", seleccion_categorias)
-mostrar_filtro("Proyectos", seleccion_proyectos)
-mostrar_filtro("Ciclos", seleccion_ciclos)
-mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela)
-mostrar_filtro("Estados", seleccion_estados)
-mostrar_filtro("Tipo de sistema", seleccion_sistema)
-mostrar_filtro("Cultivo(s)", seleccion_cultivos)
+# Pasar también la lista completa de opciones para cada filtro
+mostrar_filtro("Años", seleccion_anio, opciones_anio)
+mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, hubs)
+mostrar_filtro("Categoría", seleccion_categorias, categorias)
+mostrar_filtro("Proyectos", seleccion_proyectos, proyectos)
+mostrar_filtro("Ciclos", seleccion_ciclos, ciclos)
+mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, tipos_parcela)
+mostrar_filtro("Estados", seleccion_estados, estados)
+mostrar_filtro("Tipo de sistema", seleccion_sistema, opciones_sistema)
+mostrar_filtro("Cultivo(s)", seleccion_cultivos, opciones_cultivo)
 
 st.markdown(",  ".join(filtros_texto) if filtros_texto else "No se aplicaron filtros, se muestran todos los datos.")
 

@@ -533,34 +533,33 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import geopandas as gpd
 import streamlit as st
 
-# --- Cargar HUBs ---
-hubs = gpd.read_file("HUBs_simplificado.geojson")
-hubs = hubs.dropna(subset=["SIGLA"])
-siglas = sorted(hubs["SIGLA"].unique())
+# --- --- --- Preparar datos de parcelas --- --- --- #
+datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
+datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# --- Reducir cantidad de puntos si es muy grande ---
+# Reducir decimales para agrupar puntos cercanos
+datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
+datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
+
+# --- --- --- Función para muestrear puntos según densidad --- --- --- #
 def muestrear_puntos(df, max_puntos=5000):
+    """Reduce la cantidad de puntos de forma aleatoria si excede max_puntos"""
     if len(df) > max_puntos:
         return df.sample(n=max_puntos, random_state=1)
     return df
 
-# --- Función para crear mapa con parcelas y HUBs ---
-def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None):
-    # --- Convertir Lat/Lon a numérico y eliminar filas inválidas ---
-    datos_geo = datos_filtrados.copy()
-    datos_geo["Latitud"] = pd.to_numeric(datos_geo["Latitud"], errors="coerce")
-    datos_geo["Longitud"] = pd.to_numeric(datos_geo["Longitud"], errors="coerce")
-    datos_geo = datos_geo.dropna(subset=["Latitud", "Longitud"])
+# --- --- --- Función para generar figura según filtros --- --- --- #
+def crear_figura(datos_filtrados, zoom_inicial=4):
+    # Filtrar y agrupar
+    datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
+    datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
+    datos_geo_filtrado["Longitud_r"] = datos_geo_filtrado["Longitud"].round(4)
 
-    datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
-    datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
-
-    # --- Agrupar parcelas ---
     parcelas_geo = (
-        datos_geo.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
+        datos_geo_filtrado.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
         .agg(
             Parcelas=("Id_Parcela(Unico)", "nunique"),
             Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
@@ -569,59 +568,40 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None):
         .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"} )
     )
 
+    # Muestrear puntos si hay demasiados
     parcelas_geo = muestrear_puntos(parcelas_geo, max_puntos=5000)
 
-    # --- Colores por tipo de parcela ---
+    # Colores fijos por tipo de parcela
     colores_parcela_dict = {
         "Área de Impacto": "#87CEEB",
         "Área de extensión": "#2ca02c",
         "Módulo": "#d62728"
     }
 
+    # Crear figura
     fig = go.Figure()
-
-    # --- Agregar puntos de parcelas ---
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
-            tamanios = np.clip(df_tipo["Parcelas"] * 2, 5, 25)
+            # Escalar tamaño de marcadores con np.clip y zoom
+            tamanios = np.clip(df_tipo["Parcelas"] * (8 / zoom_inicial), 5, 40)  # puntos más visibles
             fig.add_trace(go.Scattermapbox(
                 lat=df_tipo["Latitud"],
                 lon=df_tipo["Longitud"],
                 mode="markers",
-                marker=dict(size=tamanios, color=color, sizemode="area"),
+                marker=dict(
+                    size=tamanios,
+                    sizemode="area",
+                    color=color
+                ),
                 text=df_tipo["Cultivo(s)"],
                 hovertemplate="<b>%{text}</b><extra></extra>",
                 name=tipo
             ))
 
-    # --- Agregar polígonos HUBs ---
-    if hubs is not None and seleccion_siglas is not None:
-        for sigla in seleccion_siglas:
-            hub = hubs[hubs["SIGLA"] == sigla]
-            for _, row in hub.iterrows():
-                geom = row.geometry
-                if geom is None or geom.is_empty:
-                    continue
-                if geom.geom_type == "Polygon":
-                    x, y = geom.exterior.xy
-                    fig.add_trace(go.Scattermapbox(
-                        lat=y, lon=x, mode="lines", line=dict(width=2, color="#FF5733"),
-                        name=f"HUB {sigla}", hoverinfo="name"
-                    ))
-                elif geom.geom_type == "MultiPolygon":
-                    for poly in geom.geoms:
-                        if poly.is_empty:
-                            continue
-                        x, y = poly.exterior.xy
-                        fig.add_trace(go.Scattermapbox(
-                            lat=y, lon=x, mode="lines", line=dict(width=2, color="#FF5733"),
-                            name=f"HUB {sigla}", hoverinfo="name"
-                        ))
-
-    # --- Layout ---
+    # Layout
     fig.update_layout(
-        mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4, style="carto-positron"),
+        mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom_inicial, style="carto-positron"),
         margin={"l":0,"r":0,"t":50,"b":0},
         height=700,
         width=900,
@@ -641,15 +621,8 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None):
 
     return fig
 
-# --- Sidebar para seleccionar HUBs ---
-with st.sidebar.expander("Mostrar HUBs por SIGLA"):
-    seleccion_siglas = []
-    for sigla in siglas:
-        if st.checkbox(sigla, value=True, key=f"hub_{sigla}"):
-            seleccion_siglas.append(sigla)
-
-# --- Crear figura y mostrar ---
-fig_mapa_geo = crear_figura(datos_filtrados, hubs, seleccion_siglas)
+# --- --- --- Streamlit: solo crear figura con los datos ya filtrados --- --- --- #
+fig_mapa_geo = crear_figura(datos_filtrados, zoom_inicial=4)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 # -----------------------------------

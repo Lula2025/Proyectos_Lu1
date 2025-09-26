@@ -547,13 +547,18 @@ def muestrear_puntos(df, max_puntos=5000):
         return df.sample(n=max_puntos, random_state=1)
     return df
 
-# --- Función única para crear mapa ---
+# --- Función para crear mapa con parcelas y HUBs ---
 def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None):
-    # --- Preparar datos de parcelas ---
-    datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
+    # --- Convertir Lat/Lon a numérico y eliminar filas inválidas ---
+    datos_geo = datos_filtrados.copy()
+    datos_geo["Latitud"] = pd.to_numeric(datos_geo["Latitud"], errors="coerce")
+    datos_geo["Longitud"] = pd.to_numeric(datos_geo["Longitud"], errors="coerce")
+    datos_geo = datos_geo.dropna(subset=["Latitud", "Longitud"])
+
     datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
     datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
 
+    # --- Agrupar parcelas ---
     parcelas_geo = (
         datos_geo.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
         .agg(
@@ -646,7 +651,6 @@ with st.sidebar.expander("Mostrar HUBs por SIGLA"):
 # --- Crear figura y mostrar ---
 fig_mapa_geo = crear_figura(datos_filtrados, hubs, seleccion_siglas)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

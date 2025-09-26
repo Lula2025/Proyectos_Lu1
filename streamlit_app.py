@@ -531,29 +531,25 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
 
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import numpy as np
 
 # --- --- --- Preparar datos de parcelas --- --- --- #
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
 
-# Reducir decimales para agrupar puntos cercanos
 datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
 datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
 
-# --- --- --- Función para muestrear puntos según densidad --- --- --- #
 def muestrear_puntos(df, max_puntos=5000):
-    """Reduce la cantidad de puntos de forma aleatoria si excede max_puntos"""
     if len(df) > max_puntos:
         return df.sample(n=max_puntos, random_state=1)
     return df
 
-# --- --- --- Función para generar figura según filtros --- --- --- #
-def crear_figura(datos_filtrados, zoom_inicial=4):
-    # Filtrar y agrupar
+# --- --- --- Función para crear figura con tamaño de puntos según zoom --- --- --- #
+def crear_figura(datos_filtrados, zoom=4):
     datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
     datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
     datos_geo_filtrado["Longitud_r"] = datos_geo_filtrado["Longitud"].round(4)
@@ -565,9 +561,9 @@ def crear_figura(datos_filtrados, zoom_inicial=4):
             Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
         )
         .reset_index()
-        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"}))
-    
-    # Muestrear puntos si hay demasiados
+        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"})
+    )
+
     parcelas_geo = muestrear_puntos(parcelas_geo, max_puntos=5000)
 
     colores_parcela_dict = {
@@ -580,10 +576,9 @@ def crear_figura(datos_filtrados, zoom_inicial=4):
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
-            # Tamaño base
+            # Tamaño base escalable según zoom
             tamanios_base = np.clip(df_tipo["Parcelas"] * 2, 5, 25)
-            # Escalar según zoom inicial
-            tamanios = tamanios_base * (zoom_inicial / 4)  # Ajusta 4 según tu zoom base
+            tamanios = tamanios_base * (zoom / 4)  # Aquí se escala según el zoom
             fig.add_trace(go.Scattermapbox(
                 lat=df_tipo["Latitud"],
                 lon=df_tipo["Longitud"],
@@ -595,7 +590,7 @@ def crear_figura(datos_filtrados, zoom_inicial=4):
             ))
 
     fig.update_layout(
-        mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom_inicial, style="carto-positron"),
+        mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom, style="carto-positron"),
         margin={"l":0,"r":0,"t":50,"b":0},
         height=700,
         width=900,
@@ -613,9 +608,10 @@ def crear_figura(datos_filtrados, zoom_inicial=4):
         )
     )
     return fig
-    
-# --- --- --- Streamlit: solo crear figura con los datos ya filtrados --- --- --- #
-fig_mapa_geo = crear_figura(datos_filtrados, zoom_inicial=4)
+
+# --- --- --- Streamlit --- --- --- #
+zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)  # Permite al usuario controlar el zoom
+fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 

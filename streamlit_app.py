@@ -565,41 +565,35 @@ def crear_figura(datos_filtrados, zoom_inicial=4):
             Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
         )
         .reset_index()
-        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"} )
-    )
-
+        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"}))
+    
     # Muestrear puntos si hay demasiados
     parcelas_geo = muestrear_puntos(parcelas_geo, max_puntos=5000)
 
-    # Colores fijos por tipo de parcela
     colores_parcela_dict = {
         "Área de Impacto": "#87CEEB",
         "Área de extensión": "#2ca02c",
         "Módulo": "#d62728"
     }
 
-    # Crear figura
     fig = go.Figure()
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
-            # Escalar tamaño de marcadores con np.clip y zoom
-            tamanios = np.clip(df_tipo["Parcelas"] * (8 / zoom_inicial), 5, 40)  # puntos más visibles
+            # Tamaño base
+            tamanios_base = np.clip(df_tipo["Parcelas"] * 2, 5, 25)
+            # Escalar según zoom inicial
+            tamanios = tamanios_base * (zoom_inicial / 4)  # Ajusta 4 según tu zoom base
             fig.add_trace(go.Scattermapbox(
                 lat=df_tipo["Latitud"],
                 lon=df_tipo["Longitud"],
                 mode="markers",
-                marker=dict(
-                    size=tamanios,
-                    sizemode="area",
-                    color=color
-                ),
+                marker=dict(size=tamanios, sizemode="area", color=color),
                 text=df_tipo["Cultivo(s)"],
                 hovertemplate="<b>%{text}</b><extra></extra>",
                 name=tipo
             ))
 
-    # Layout
     fig.update_layout(
         mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom_inicial, style="carto-positron"),
         margin={"l":0,"r":0,"t":50,"b":0},
@@ -618,12 +612,15 @@ def crear_figura(datos_filtrados, zoom_inicial=4):
             borderwidth=1
         )
     )
-
     return fig
-
+    
 # --- --- --- Streamlit: solo crear figura con los datos ya filtrados --- --- --- #
 fig_mapa_geo = crear_figura(datos_filtrados, zoom_inicial=4)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
+
+
+
+
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

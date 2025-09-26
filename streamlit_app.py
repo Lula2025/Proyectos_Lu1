@@ -530,11 +530,22 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 #----------------------------------
 
 
-def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs=True):
-    import numpy as np
-    import plotly.graph_objects as go
+import plotly.graph_objects as go
+import numpy as np
 
-    # --- Preparar datos de parcelas --- #
+def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs=True):
+    """
+    Crea un mapa interactivo con Plotly mostrando:
+    - Polígonos de HUBs coloreados por categoría (si mostrar_hubs=True)
+    - Puntos de parcelas con tamaño según número de parcelas y color por Tipo_parcela
+    """
+    # --- Verificar columnas necesarias ---
+    required_cols_datos = ["Latitud", "Longitud", "Tipo_parcela", "Id_Parcela(Unico)"]
+    for col in required_cols_datos:
+        if col not in datos_filtrados.columns:
+            raise ValueError(f"Falta columna requerida en datos_filtrados: {col}")
+
+    # Preparar datos de parcelas
     datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
     datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
     datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
@@ -546,25 +557,30 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs
         .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud"})
     )
 
-    # --- Colores por tipo de parcela --- #
+    # Colores por tipo de parcela
     colores_parcela_dict = {
         "Área de Impacto": "#87CEEB",
         "Área de extensión": "#2ca02c",
         "Módulo": "#d62728"
     }
 
-    # --- Colores por categoría de HUB (puedes personalizar) --- #
-    if hubs is not None and "Categoria" in hubs.columns:
-        categorias = hubs["Categoria"].dropna().unique()
-        palette_hubs = px.colors.qualitative.Safe  # paleta de Plotly
-        colores_hub_dict = {cat: palette_hubs[i % len(palette_hubs)] for i, cat in enumerate(categorias)}
-    else:
-        colores_hub_dict = {}
-
     fig = go.Figure()
 
-    # --- Agregar polígonos HUBs por categoría --- #
-    if mostrar_hubs and hubs is not None and seleccion_siglas is not None:
+    # --- Polígonos HUBs ---
+    if mostrar_hubs and hubs is not None and seleccion_siglas:
+        if "geometry" not in hubs.columns:
+            st.warning("La capa de HUBs no tiene columna 'geometry'. Se ignorarán los polígonos.")
+            mostrar_hubs = False
+
+        # Colores por categoría
+        if "Categoria" in hubs.columns:
+            categorias = hubs["Categoria"].dropna().unique()
+            import plotly.express as px
+            palette_hubs = px.colors.qualitative.Safe
+            colores_hub_dict = {cat: palette_hubs[i % len(palette_hubs)] for i, cat in enumerate(categorias)}
+        else:
+            colores_hub_dict = {}
+
         for sigla in seleccion_siglas:
             hub = hubs[hubs["SIGLA"] == sigla]
             for _, row in hub.iterrows():
@@ -572,6 +588,7 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs
                 if geom is None or geom.is_empty:
                     continue
                 color = colores_hub_dict.get(row.get("Categoria", ""), "#888888")  # gris si no hay categoría
+
                 if geom.geom_type == "Polygon":
                     x, y = geom.exterior.xy
                     fig.add_trace(go.Scattermapbox(
@@ -588,7 +605,7 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs
                             name=f"HUB {sigla} ({row.get('Categoria','')})", hoverinfo="name"
                         ))
 
-    # --- Agregar puntos de parcelas --- #
+    # --- Puntos de parcelas ---
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
@@ -602,7 +619,7 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs
                 hovertemplate="<b>%{lat}, %{lon}</b><br>Parcelas: %{marker.size}<extra></extra>"
             ))
 
-    # --- Layout --- #
+    # --- Layout ---
     fig.update_layout(
         mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=4, style="carto-positron"),
         margin={"l":0,"r":0,"t":40,"b":0},
@@ -620,12 +637,8 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs
     )
 
     return fig
-
-import streamlit as st
-
-# Si quieres mostrar HUBs y parcelas:
 fig_mapa_geo = crear_figura(datos_filtrados, hubs, seleccion_siglas, mostrar_hubs=True)
-
+st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 
 # -----------------------------------

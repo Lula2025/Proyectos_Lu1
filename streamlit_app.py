@@ -621,6 +621,11 @@ def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs
 
     return fig
 
+import streamlit as st
+
+# Si quieres mostrar HUBs y parcelas:
+fig_mapa_geo = crear_figura(datos_filtrados, hubs, seleccion_siglas, mostrar_hubs=True)
+
 
 
 # -----------------------------------

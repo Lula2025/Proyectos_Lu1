@@ -530,72 +530,63 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 #----------------------------------
 
 
-import pandas as pd
-import geopandas as gpd
-import plotly.graph_objects as go
-import streamlit as st
-import numpy as np
+def crear_figura(datos_filtrados, hubs=None, seleccion_siglas=None, mostrar_hubs=True):
+    import numpy as np
+    import plotly.graph_objects as go
 
-# --- Cargar polígonos HUBs --- #
-hubs = gpd.read_file("HUBs_simplificado.geojson")
-
-# Limpiar columna SIGLA (quitar NULLs)
-hubs = hubs.dropna(subset=["SIGLA"])
-siglas = sorted(hubs["SIGLA"].unique())
-
-# --- Cargar datos de parcelas --- #
-datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
-datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
-datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
-
-# Reducir decimales para agrupar puntos cercanos
-datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
-datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
-
-# --- Filtros en sidebar --- #
-with st.sidebar.expander("Mostrar HUBs por SIGLA"):
-    seleccion_siglas = []
-    for sigla in siglas:
-        if st.checkbox(sigla, value=True, key=f"hub_{sigla}"):
-            seleccion_siglas.append(sigla)
-
-# --- Función para crear la figura --- #
-def crear_figura(datos_filtrados, hubs, seleccion_siglas):
-    # --- Parcelas agrupadas --- #
-    datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
-    datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
-    datos_geo_filtrado["Longitud_r"] = datos_geo_filtrado["Longitud"].round(4)
+    # --- Preparar datos de parcelas --- #
+    datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
+    datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
+    datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
 
     parcelas_geo = (
-        datos_geo_filtrado.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
+        datos_geo.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
         .agg(Parcelas=("Id_Parcela(Unico)", "nunique"))
         .reset_index()
         .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud"})
     )
 
-    # --- Colores fijos por tipo de parcela --- #
+    # --- Colores por tipo de parcela --- #
     colores_parcela_dict = {
         "Área de Impacto": "#87CEEB",
         "Área de extensión": "#2ca02c",
         "Módulo": "#d62728"
     }
 
-    # --- Crear figura --- #
+    # --- Colores por categoría de HUB (puedes personalizar) --- #
+    if hubs is not None and "Categoria" in hubs.columns:
+        categorias = hubs["Categoria"].dropna().unique()
+        palette_hubs = px.colors.qualitative.Safe  # paleta de Plotly
+        colores_hub_dict = {cat: palette_hubs[i % len(palette_hubs)] for i, cat in enumerate(categorias)}
+    else:
+        colores_hub_dict = {}
+
     fig = go.Figure()
 
-    # --- Agregar polígonos HUBs seleccionados --- #
-    for sigla in seleccion_siglas:
-        hub = hubs[hubs["SIGLA"] == sigla]
-        for _, row in hub.iterrows():
-            x, y = row.geometry.exterior.xy
-            fig.add_trace(go.Scattermapbox(
-                lat=y,
-                lon=x,
-                mode="lines",
-                line=dict(width=2),
-                name=f"HUB {sigla}",
-                hoverinfo="name"
-            ))
+    # --- Agregar polígonos HUBs por categoría --- #
+    if mostrar_hubs and hubs is not None and seleccion_siglas is not None:
+        for sigla in seleccion_siglas:
+            hub = hubs[hubs["SIGLA"] == sigla]
+            for _, row in hub.iterrows():
+                geom = row.geometry
+                if geom is None or geom.is_empty:
+                    continue
+                color = colores_hub_dict.get(row.get("Categoria", ""), "#888888")  # gris si no hay categoría
+                if geom.geom_type == "Polygon":
+                    x, y = geom.exterior.xy
+                    fig.add_trace(go.Scattermapbox(
+                        lat=y, lon=x, mode="lines", line=dict(width=2, color=color),
+                        name=f"HUB {sigla} ({row.get('Categoria','')})", hoverinfo="name"
+                    ))
+                elif geom.geom_type == "MultiPolygon":
+                    for poly in geom.geoms:
+                        if poly.is_empty:
+                            continue
+                        x, y = poly.exterior.xy
+                        fig.add_trace(go.Scattermapbox(
+                            lat=y, lon=x, mode="lines", line=dict(width=2, color=color),
+                            name=f"HUB {sigla} ({row.get('Categoria','')})", hoverinfo="name"
+                        ))
 
     # --- Agregar puntos de parcelas --- #
     for tipo, color in colores_parcela_dict.items():
@@ -627,11 +618,9 @@ def crear_figura(datos_filtrados, hubs, seleccion_siglas):
             bgcolor="rgba(255,255,255,0.7)"
         )
     )
+
     return fig
 
-# --- Mostrar en Streamlit --- #
-fig_mapa_geo = crear_figura(datos_filtrados, hubs, seleccion_siglas)
-st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 
 # -----------------------------------

@@ -629,11 +629,11 @@ unique_hubs = hubs["Nombre"].unique()
 palette = px.colors.qualitative.Set3 * ((len(unique_hubs) // 12) + 1)
 hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 
-# --- --- --- Agregar HUBs encima --- --- --- #
+# --- --- --- Agregar HUBs encima (solo un elemento en la leyenda por HUB) --- --- --- #
 for _, row in hubs_to_plot.iterrows():
     geom = row.geometry
     geoms = [geom] if geom.geom_type == "Polygon" else geom.geoms
-    for poly in geoms:
+    for i, poly in enumerate(geoms):
         x, y = poly.exterior.xy
         fig_mapa_geo.add_trace(go.Scattermapbox(
             lat=list(y),
@@ -642,7 +642,8 @@ for _, row in hubs_to_plot.iterrows():
             fill="toself",
             fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.3)"),
             line=dict(color=hub_color_dict[row["Nombre"]], width=2),
-            name=f"HUB - {row['Nombre']}",
+            name=f"HUB - {row['Nombre']}" if i==0 else None,
+            showlegend=True if i==0 else False,
             hovertext=f"HUB: {row['Nombre']}",
             hoverinfo="text"
         ))

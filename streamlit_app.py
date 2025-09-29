@@ -722,6 +722,16 @@ centros_estados = {
 parcelas_estado["Latitud"] = parcelas_estado["Estado"].map(lambda x: centros_estados.get(x, {}).get("lat", 23.0))
 parcelas_estado["Longitud"] = parcelas_estado["Estado"].map(lambda x: centros_estados.get(x, {}).get("lon", -102.0))
 
+# --- Ajuste dinámico del tamaño de burbujas ---
+max_parcelas = parcelas_estado["Parcelas"].max()
+size_max = 40  # tamaño máximo en pixeles
+size_min = 6   # tamaño mínimo visible
+
+if max_parcelas > 0:
+    sizeref = (2.0 * max_parcelas) / (size_max**2)
+else:
+    sizeref = 1  # fallback si no hay datos
+
 # --- Crear mapa de burbujas interactivo ---
 fig_estado = px.scatter_mapbox(
     parcelas_estado,
@@ -731,7 +741,7 @@ fig_estado = px.scatter_mapbox(
     color="Parcelas",
     hover_name="Estado",
     hover_data={"Parcelas": True, "Latitud": False, "Longitud": False},  
-    size_max=6,  # círculos pequeños
+    size_max=size_max,
     color_continuous_scale="Plasma",
     zoom=4.0,
     center={"lat": 23.0, "lon": -102.0},
@@ -739,18 +749,16 @@ fig_estado = px.scatter_mapbox(
     title="📍 Intensidad de Parcelas Atendidas por Estado"
 )
 
-# --- Ajuste dinámico de escala de colores ---
+# --- Ajuste de escala de colores ---
 cmin = parcelas_estado["Parcelas"].min()
-cmax = parcelas_estado["Parcelas"].max()
-
-# Dividir la leyenda en 5–6 intervalos para mayor diversidad de colores
+cmax = max_parcelas
 step = max(1, (cmax - cmin) // 6)
 
 fig_estado.update_traces(
     marker=dict(
         sizemode="area",
-        sizeref=30,  # controlar tamaño de círculos
-        sizemin=1,
+        sizeref=sizeref,   # dinámico según filtro
+        sizemin=size_min,  # tamaño mínimo garantizado
         color=parcelas_estado["Parcelas"],
         cmin=cmin,
         cmax=cmax,
@@ -760,7 +768,7 @@ fig_estado.update_traces(
     textposition="top center"
 )
 
-# --- Leyenda y layout general ---
+# --- Layout ---
 fig_estado.update_layout(
     margin={"l":0,"r":0,"t":50,"b":0},
     height=700,

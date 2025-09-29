@@ -566,7 +566,10 @@ def muestrear_puntos(df, max_puntos=5000):
     return df
 
 # --- --- --- Función para crear figura --- --- --- #
-def crear_figura(datos_filtrados, zoom=4):
+import plotly.express as px
+
+def crear_figura(datos_filtrados, hubs, zoom=4):
+    # --- Parcelas --- #
     datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
     datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
     datos_geo_filtrado["Longitud_r"] = datos_geo_filtrado["Longitud"].round(4)
@@ -578,7 +581,11 @@ def crear_figura(datos_filtrados, zoom=4):
             Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
         )
         .reset_index()
-        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"})
+        .rename(columns={
+            "Latitud_r": "Latitud",
+            "Longitud_r": "Longitud",
+            "Cultivos_unicos": "Cultivo(s)"
+        })
     )
 
     parcelas_geo = muestrear_puntos(parcelas_geo, max_puntos=5000)
@@ -591,7 +598,7 @@ def crear_figura(datos_filtrados, zoom=4):
 
     fig = go.Figure()
 
-    # --- Puntos de parcelas --- #
+    # --- Agregar Parcelas como puntos --- #
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
@@ -607,25 +614,43 @@ def crear_figura(datos_filtrados, zoom=4):
                 name=tipo
             ))
 
-    # --- Polígonos de HUBs --- #
-    hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
+    # --- Colores HUBs sin matplotlib --- #
+    unique_hubs = hubs["Nombre"].unique()
+    palette = px.colors.qualitative.Set3 * ((len(unique_hubs) // 12) + 1)
+    hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 
-    for _, row in hubs_to_plot.iterrows():
-        if row.geometry is not None:
-            geoms = [row.geometry] if row.geometry.geom_type == "Polygon" else row.geometry.geoms
-            for geom in geoms:
-                x, y = geom.exterior.xy
+    # --- Agregar HUBs como polígonos --- #
+    for _, row in hubs.iterrows():
+        geom = row.geometry
+        if geom.geom_type == "Polygon":
+            x, y = geom.exterior.xy
+            fig.add_trace(go.Scattermapbox(
+                lat=list(y),
+                lon=list(x),
+                mode="lines",
+                fill="toself",
+                fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.3)"),
+                line=dict(color=hub_color_dict[row["Nombre"]], width=2),
+                name=f"HUB - {row['Nombre']}",
+                hovertext=f"HUB: {row['Nombre']}",
+                hoverinfo="text"
+            ))
+        elif geom.geom_type == "MultiPolygon":
+            for poly in geom:
+                x, y = poly.exterior.xy
                 fig.add_trace(go.Scattermapbox(
-                    lat=y,
-                    lon=x,
+                    lat=list(y),
+                    lon=list(x),
                     mode="lines",
                     fill="toself",
                     fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.3)"),
                     line=dict(color=hub_color_dict[row["Nombre"]], width=2),
-                    name=f"HUB - {row['Nombre']}"
+                    name=f"HUB - {row['Nombre']}",
+                    hovertext=f"HUB: {row['Nombre']}",
+                    hoverinfo="text"
                 ))
 
-    # --- Configuración mapa --- #
+    # --- Layout --- #
     fig.update_layout(
         mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom, style="carto-positron"),
         margin={"l":0,"r":0,"t":50,"b":0},
@@ -633,7 +658,7 @@ def crear_figura(datos_filtrados, zoom=4):
         width=900,
         title="📍 Distribución de Parcelas y HUBs",
         legend=dict(
-            title="Capas",
+            title="Leyenda",
             orientation="v",
             x=1.05,
             y=1,
@@ -644,6 +669,7 @@ def crear_figura(datos_filtrados, zoom=4):
             borderwidth=1
         )
     )
+
     return fig
 
 # --- --- --- Streamlit --- --- --- #

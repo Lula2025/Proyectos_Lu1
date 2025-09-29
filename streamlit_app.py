@@ -535,7 +535,7 @@ import plotly.graph_objects as go
 import streamlit as st
 import numpy as np
 import geopandas as gpd
-import matplotlib.pyplot as plt  # solo para colores
+import plotly.express as px  # para usar paleta de colores
 
 # --- --- --- Cargar HUBs desde Parquet --- --- --- #
 hubs = gpd.read_parquet("HUBs.parquet")
@@ -544,11 +544,10 @@ hubs = gpd.read_parquet("HUBs.parquet")
 if "Nombre" not in hubs.columns:
     hubs["Nombre"] = [f"HUB {i}" for i in range(len(hubs))]
 
-# --- Colores distintos por HUB ---
+# --- Colores distintos por HUB (paleta de Plotly) ---
 unique_hubs = hubs["Nombre"].unique()
-color_palette = plt.cm.get_cmap("tab20", len(unique_hubs))  # paleta de hasta 20 colores
-hub_color_dict = {hub: f"rgba{tuple(int(c*255) for c in color_palette(i)[:3]) + (0.3,)}"
-                  for i, hub in enumerate(unique_hubs)}
+palette = px.colors.qualitative.Set3 * 5  # se repite para cubrir más de 12 hubs
+hub_color_dict = {hub: palette[i % len(palette)] for i, hub in enumerate(unique_hubs)}
 
 # --- Filtro en Streamlit ---
 hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(unique_hubs))
@@ -621,8 +620,8 @@ def crear_figura(datos_filtrados, zoom=4):
                     lon=x,
                     mode="lines",
                     fill="toself",
-                    fillcolor=hub_color_dict[row["Nombre"]],
-                    line=dict(color=hub_color_dict[row["Nombre"]].replace("0.3", "1.0"), width=2),
+                    fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.3)"),
+                    line=dict(color=hub_color_dict[row["Nombre"]], width=2),
                     name=f"HUB - {row['Nombre']}"
                 ))
 

@@ -532,43 +532,28 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 import streamlit as st
 import numpy as np
 import geopandas as gpd
-import plotly.express as px  # para usar paleta de colores
 
-# --- --- --- Cargar HUBs desde Parquet --- --- --- #
+# --- --- --- Cargar HUBs --- --- --- #
 hubs = gpd.read_parquet("HUBs.parquet")
 
-# Asegurar que tenga una columna de nombre
+# Asegurar columna Nombre
 if "Nombre" not in hubs.columns:
     hubs["Nombre"] = [f"HUB {i}" for i in range(len(hubs))]
 
-# --- Colores distintos por HUB (paleta de Plotly) ---
-unique_hubs = hubs["Nombre"].unique()
-palette = px.colors.qualitative.Set3 * 5  # se repite para cubrir más de 12 hubs
-hub_color_dict = {hub: palette[i % len(palette)] for i, hub in enumerate(unique_hubs)}
+# --- --- --- Selección de HUBs en Streamlit --- --- --- #
+hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(hubs["Nombre"].unique()))
 
-# --- Filtro en Streamlit ---
-hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(unique_hubs))
-
-# --- --- --- Preparar datos de parcelas --- --- --- #
-datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
-datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
-datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
-
-datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
-datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
-
+# --- --- --- Funciones --- --- --- #
 def muestrear_puntos(df, max_puntos=5000):
     if len(df) > max_puntos:
         return df.sample(n=max_puntos, random_state=1)
     return df
 
-# --- --- --- Función para crear figura --- --- --- #
-import plotly.express as px
-
-def crear_figura(datos_filtrados, hubs, zoom=4):
+def crear_figura(datos_filtrados, hubs, hub_seleccionado, zoom=4):
     # --- Parcelas --- #
     datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
     datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
@@ -619,11 +604,15 @@ def crear_figura(datos_filtrados, hubs, zoom=4):
     palette = px.colors.qualitative.Set3 * ((len(unique_hubs) // 12) + 1)
     hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 
+    # --- Filtrar HUBs según selección --- #
+    hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
+
     # --- Agregar HUBs como polígonos --- #
-    for _, row in hubs.iterrows():
+    for _, row in hubs_to_plot.iterrows():
         geom = row.geometry
-        if geom.geom_type == "Polygon":
-            x, y = geom.exterior.xy
+        geoms = [geom] if geom.geom_type == "Polygon" else geom.geoms
+        for poly in geoms:
+            x, y = poly.exterior.xy
             fig.add_trace(go.Scattermapbox(
                 lat=list(y),
                 lon=list(x),
@@ -635,20 +624,6 @@ def crear_figura(datos_filtrados, hubs, zoom=4):
                 hovertext=f"HUB: {row['Nombre']}",
                 hoverinfo="text"
             ))
-        elif geom.geom_type == "MultiPolygon":
-            for poly in geom:
-                x, y = poly.exterior.xy
-                fig.add_trace(go.Scattermapbox(
-                    lat=list(y),
-                    lon=list(x),
-                    mode="lines",
-                    fill="toself",
-                    fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.3)"),
-                    line=dict(color=hub_color_dict[row["Nombre"]], width=2),
-                    name=f"HUB - {row['Nombre']}",
-                    hovertext=f"HUB: {row['Nombre']}",
-                    hoverinfo="text"
-                ))
 
     # --- Layout --- #
     fig.update_layout(
@@ -674,7 +649,7 @@ def crear_figura(datos_filtrados, hubs, zoom=4):
 
 # --- --- --- Streamlit --- --- --- #
 zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)
-fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
+fig_mapa_geo = crear_figura(datos_filtrados, hubs, hub_seleccionado, zoom=zoom)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
 
 

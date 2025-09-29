@@ -629,7 +629,25 @@ unique_hubs = hubs["Nombre"].unique()
 palette = px.colors.qualitative.Set3 * ((len(unique_hubs) // 12) + 1)
 hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 
-# --- --- --- Agregar HUBs encima (solo un elemento en la leyenda por HUB) --- --- --- #
+# Diccionario de nombres personalizados para la leyenda
+nombre_leyenda_dict = {
+    "HUB 0": "HUB TBD",
+    "HUB 1": "HUB BAJ",
+    "HUB 2": "HUB C",
+    "HUB 3": "HUB D",
+    "HUB 4": "HUB E",
+    "HUB 5": "HUB F",
+    "HUB 6": "HUB G",
+    "HUB 7": "HUB H",
+    "HUB 8": "HUB I",
+    "HUB 9": "HUB J",
+    "HUB 10": "HUB K",
+    "HUB 11": "HUB L",
+    "HUB 12": "HUB M",
+    "HUB 13": "HUB N",
+}
+
+# --- --- --- Agregar HUBs encima (con transparencia y leyenda limpia) --- --- --- #
 for _, row in hubs_to_plot.iterrows():
     geom = row.geometry
     geoms = [geom] if geom.geom_type == "Polygon" else geom.geoms
@@ -640,9 +658,9 @@ for _, row in hubs_to_plot.iterrows():
             lon=list(x),
             mode="lines",
             fill="toself",
-            fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.3)"),
+            fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.1)"),  # transparencia 10%
             line=dict(color=hub_color_dict[row["Nombre"]], width=2),
-            name=f"HUB - {row['Nombre']}" if i==0 else None,
+            name=nombre_leyenda_dict.get(row["Nombre"], f"HU {row['Nombre']}") if i==0 else None,
             showlegend=True if i==0 else False,
             hovertext=f"HUB: {row['Nombre']}",
             hoverinfo="text"

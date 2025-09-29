@@ -534,6 +534,24 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import numpy as np
+import geopandas as gpd
+import matplotlib.pyplot as plt  # solo para colores
+
+# --- --- --- Cargar HUBs desde Parquet --- --- --- #
+hubs = gpd.read_parquet("HUBs.parquet")
+
+# Asegurar que tenga una columna de nombre
+if "Nombre" not in hubs.columns:
+    hubs["Nombre"] = [f"HUB {i}" for i in range(len(hubs))]
+
+# --- Colores distintos por HUB ---
+unique_hubs = hubs["Nombre"].unique()
+color_palette = plt.cm.get_cmap("tab20", len(unique_hubs))  # paleta de hasta 20 colores
+hub_color_dict = {hub: f"rgba{tuple(int(c*255) for c in color_palette(i)[:3]) + (0.3,)}"
+                  for i, hub in enumerate(unique_hubs)}
+
+# --- Filtro en Streamlit ---
+hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(unique_hubs))
 
 # --- --- --- Preparar datos de parcelas --- --- --- #
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
@@ -548,7 +566,7 @@ def muestrear_puntos(df, max_puntos=5000):
         return df.sample(n=max_puntos, random_state=1)
     return df
 
-# --- --- --- Función para crear figura con tamaño de puntos según zoom --- --- --- #
+# --- --- --- Función para crear figura --- --- --- #
 def crear_figura(datos_filtrados, zoom=4):
     datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
     datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
@@ -573,12 +591,13 @@ def crear_figura(datos_filtrados, zoom=4):
     }
 
     fig = go.Figure()
+
+    # --- Puntos de parcelas --- #
     for tipo, color in colores_parcela_dict.items():
         df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
         if not df_tipo.empty:
-            # Tamaño base escalable según zoom
             tamanios_base = np.clip(df_tipo["Parcelas"] * 2, 5, 25)
-            tamanios = tamanios_base * (zoom / 4)  # Aquí se escala según el zoom
+            tamanios = tamanios_base * (zoom / 4)
             fig.add_trace(go.Scattermapbox(
                 lat=df_tipo["Latitud"],
                 lon=df_tipo["Longitud"],
@@ -589,14 +608,33 @@ def crear_figura(datos_filtrados, zoom=4):
                 name=tipo
             ))
 
+    # --- Polígonos de HUBs --- #
+    hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
+
+    for _, row in hubs_to_plot.iterrows():
+        if row.geometry is not None:
+            geoms = [row.geometry] if row.geometry.geom_type == "Polygon" else row.geometry.geoms
+            for geom in geoms:
+                x, y = geom.exterior.xy
+                fig.add_trace(go.Scattermapbox(
+                    lat=y,
+                    lon=x,
+                    mode="lines",
+                    fill="toself",
+                    fillcolor=hub_color_dict[row["Nombre"]],
+                    line=dict(color=hub_color_dict[row["Nombre"]].replace("0.3", "1.0"), width=2),
+                    name=f"HUB - {row['Nombre']}"
+                ))
+
+    # --- Configuración mapa --- #
     fig.update_layout(
         mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom, style="carto-positron"),
         margin={"l":0,"r":0,"t":50,"b":0},
         height=700,
         width=900,
-        title="📍 Distribución de Parcelas Atendidas",
+        title="📍 Distribución de Parcelas y HUBs",
         legend=dict(
-            title="Tipo de Parcela",
+            title="Capas",
             orientation="v",
             x=1.05,
             y=1,
@@ -610,10 +648,9 @@ def crear_figura(datos_filtrados, zoom=4):
     return fig
 
 # --- --- --- Streamlit --- --- --- #
-zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)  # Permite al usuario controlar el zoom
+zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)
 fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 
 

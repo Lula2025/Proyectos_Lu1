@@ -633,18 +633,18 @@ hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 nombre_leyenda_dict = {
     "HUB 0": "HUB TBD",
     "HUB 1": "HUB BAJ",
-    "HUB 2": "HUB C",
-    "HUB 3": "HUB D",
-    "HUB 4": "HUB E",
-    "HUB 5": "HUB F",
-    "HUB 6": "HUB G",
-    "HUB 7": "HUB H",
-    "HUB 8": "HUB I",
-    "HUB 9": "HUB J",
-    "HUB 10": "HUB K",
-    "HUB 11": "HUB L",
-    "HUB 12": "HUB M",
-    "HUB 13": "HUB N",
+    "HUB 2": "HUB CHIA",
+    "HUB 3": "HUB EINT",
+    "HUB 4": "HUB GCTO",
+    "HUB 5": "HUB INGP",
+    "HUB 6": "HUB OCC",
+    "HUB 7": "HUB PCTO",
+    "HUB 8": "HUB PAC",
+    "HUB 9": "HUB PSUR",
+    "HUB 10": "HUB YUC",
+    "HUB 11": "HUB VAGP",
+    "HUB 12": "HUB VAM",
+
 }
 
 # --- --- --- Agregar HUBs encima (con transparencia y leyenda limpia) --- --- --- #

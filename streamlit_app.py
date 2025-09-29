@@ -530,31 +530,106 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 #----------------------------------
 
 
-import geopandas as gpd
+import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
+import streamlit as st
+import geopandas as gpd
+import numpy as np
 
-# --- --- --- Cargar HUBs --- --- --- #
+# --- --- --- Preparar datos de parcelas (tu código original) --- --- --- #
+datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
+datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
+datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
+
+datos_geo["Latitud_r"] = datos_geo["Latitud"].round(4)
+datos_geo["Longitud_r"] = datos_geo["Longitud"].round(4)
+
+def muestrear_puntos(df, max_puntos=5000):
+    if len(df) > max_puntos:
+        return df.sample(n=max_puntos, random_state=1)
+    return df
+
+# --- --- --- Función original de parcelas --- --- --- #
+def crear_figura(datos_filtrados, zoom=4):
+    datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
+    datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
+    datos_geo_filtrado["Longitud_r"] = datos_geo_filtrado["Longitud"].round(4)
+
+    parcelas_geo = (
+        datos_geo_filtrado.groupby(["Latitud_r", "Longitud_r", "Tipo_parcela"])
+        .agg(
+            Parcelas=("Id_Parcela(Unico)", "nunique"),
+            Cultivos_unicos=("Cultivo(s)", lambda x: ", ".join([str(i) for i in x.dropna().unique()]))
+        )
+        .reset_index()
+        .rename(columns={"Latitud_r": "Latitud", "Longitud_r": "Longitud", "Cultivos_unicos": "Cultivo(s)"})
+    )
+
+    parcelas_geo = muestrear_puntos(parcelas_geo, max_puntos=5000)
+
+    colores_parcela_dict = {
+        "Área de Impacto": "#87CEEB",
+        "Área de extensión": "#2ca02c",
+        "Módulo": "#d62728"
+    }
+
+    fig = go.Figure()
+    for tipo, color in colores_parcela_dict.items():
+        df_tipo = parcelas_geo[parcelas_geo["Tipo_parcela"] == tipo]
+        if not df_tipo.empty:
+            tamanios_base = np.clip(df_tipo["Parcelas"] * 2, 5, 25)
+            tamanios = tamanios_base * (zoom / 4)
+            fig.add_trace(go.Scattermapbox(
+                lat=df_tipo["Latitud"],
+                lon=df_tipo["Longitud"],
+                mode="markers",
+                marker=dict(size=tamanios, sizemode="area", color=color),
+                text=df_tipo["Cultivo(s)"],
+                hovertemplate="<b>%{text}</b><extra></extra>",
+                name=tipo
+            ))
+
+    fig.update_layout(
+        mapbox=dict(center={"lat": 23.0, "lon": -102.0}, zoom=zoom, style="carto-positron"),
+        margin={"l":0,"r":0,"t":50,"b":0},
+        height=700,
+        width=900,
+        title="📍 Distribución de Parcelas Atendidas",
+        legend=dict(
+            title="Tipo de Parcela",
+            orientation="v",
+            x=1.05,
+            y=1,
+            xanchor="left",
+            yanchor="top",
+            bgcolor="rgba(255,255,255,0.7)",
+            bordercolor="black",
+            borderwidth=1
+        )
+    )
+    return fig
+
+# --- --- --- Streamlit --- --- --- #
+zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)
+
+# Crear figura de parcelas
+fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
+
+# --- --- --- Cargar y filtrar HUBs --- --- --- #
 hubs = gpd.read_parquet("HUBs.parquet")
-
-# Asegurar columna Nombre
 if "Nombre" not in hubs.columns:
     hubs["Nombre"] = [f"HUB {i}" for i in range(len(hubs))]
 
-# --- --- --- Selección de HUBs en Streamlit --- --- --- #
 hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(hubs["Nombre"].unique()))
+hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
 
-# --- --- --- Crear figura de parcelas --- --- --- #
-fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
-
-# --- --- --- Colores HUBs --- --- --- #
+# Colores HUBs
 unique_hubs = hubs["Nombre"].unique()
 palette = px.colors.qualitative.Set3 * ((len(unique_hubs) // 12) + 1)
 hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 
-# --- --- --- Filtrar HUBs según selección --- --- --- #
-hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
-
-# --- --- --- Agregar HUBs como polígonos --- --- --- #
+# --- --- --- Agregar HUBs encima --- --- --- #
 for _, row in hubs_to_plot.iterrows():
     geom = row.geometry
     geoms = [geom] if geom.geom_type == "Polygon" else geom.geoms
@@ -572,9 +647,8 @@ for _, row in hubs_to_plot.iterrows():
             hoverinfo="text"
         ))
 
-# --- --- --- Mostrar mapa final --- --- --- #
+# Mostrar mapa final
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
 
 
 

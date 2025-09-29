@@ -636,19 +636,19 @@ hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
 
 # Diccionario de nombres personalizados para la leyenda
 nombre_leyenda_dict = {
-    "HUB 0": "HUB TBD",
-    "HUB 1": "HUB BAJ",
-    "HUB 2": "HUB CHIA",
-    "HUB 3": "HUB EINT",
-    "HUB 4": "HUB GCTO",
-    "HUB 5": "HUB INGP",
-    "HUB 6": "HUB OCC",
-    "HUB 7": "HUB PCTO",
-    "HUB 8": "HUB PAC",
-    "HUB 9": "HUB PSUR",
-    "HUB 10": "HUB YUC",
-    "HUB 11": "HUB VAGP",
-    "HUB 12": "HUB VAM",
+    "HUB 0": "0._HUB TBD",
+    "HUB 1": "1._HUB BAJ",
+    "HUB 2": "2._HUB CHIA",
+    "HUB 3": "3._HUB EINT",
+    "HUB 4": "4._HUB GCTO",
+    "HUB 5": "5._HUB INGP",
+    "HUB 6": "6._HUB OCC",
+    "HUB 7": "7._HUB PCTO",
+    "HUB 8": "8._HUB PAC",
+    "HUB 9": "9._HUB PSUR",
+    "HUB 10": "10._HUB YUC",
+    "HUB 11": "11._HUB VAGP",
+    "HUB 12": "12._HUB VAM",
 
 }
 

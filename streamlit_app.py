@@ -175,23 +175,28 @@ if seleccion_cultivos:
 # --- Resumen de filtros aplicados ---
 st.markdown("### Filtros Aplicados")
 filtros_texto = []
-def mostrar_filtro(nombre, seleccion):
-    if seleccion:
-        filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
-    else:
-        filtros_texto.append(f"**{nombre}:** Todos")
 
-mostrar_filtro("Años", seleccion_anio)
-mostrar_filtro("HUBs Agroecológicos", seleccion_hubs)
-mostrar_filtro("Categoría", seleccion_categorias)
-mostrar_filtro("Proyectos", seleccion_proyectos)
-mostrar_filtro("Ciclos", seleccion_ciclos)
-mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela)
-mostrar_filtro("Estados", seleccion_estados)
-mostrar_filtro("Tipo de sistema", seleccion_sistema)
-mostrar_filtro("Cultivo(s)", seleccion_cultivos)
+def mostrar_filtro(nombre, seleccion, opciones):
+    if not seleccion:  # Si no hay selección => Todos
+        filtros_texto.append(f"**{nombre}:** Todos")
+    elif set(seleccion) == set(opciones):  # Si seleccionó todo => Todos
+        filtros_texto.append(f"**{nombre}:** Todos")
+    else:
+        filtros_texto.append(f"**{nombre}:** {', '.join(str(s) for s in seleccion)}")
+
+# Pasamos también las opciones de cada filtro
+mostrar_filtro("Años", seleccion_anio, opciones_anio)
+mostrar_filtro("HUBs Agroecológicos", seleccion_hubs, hubs)
+mostrar_filtro("Categoría", seleccion_categorias, categorias)
+mostrar_filtro("Proyectos", seleccion_proyectos, proyectos)
+mostrar_filtro("Ciclos", seleccion_ciclos, ciclos)
+mostrar_filtro("Tipos de Parcela", seleccion_tipos_parcela, tipos_parcela)
+mostrar_filtro("Estados", seleccion_estados, estados)
+mostrar_filtro("Tipo de sistema", seleccion_sistema, opciones_sistema)
+mostrar_filtro("Cultivo(s)", seleccion_cultivos, opciones_cultivo)
 
 st.markdown(",  ".join(filtros_texto) if filtros_texto else "No se aplicaron filtros, se muestran todos los datos.")
+
 
 
 # ----------------------------

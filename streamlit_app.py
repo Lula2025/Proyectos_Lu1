@@ -535,14 +535,15 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 #----------------------------------
 
 
+# --- --- --- Librerías --- --- --- #
 import pandas as pd
+import geopandas as gpd
 import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
-import geopandas as gpd
 import numpy as np
 
-# --- --- --- Preparar datos de parcelas (tu código original) --- --- --- #
+# --- --- --- Preparar datos de parcelas --- --- --- #
 datos_filtrados["Latitud"] = pd.to_numeric(datos_filtrados["Latitud"], errors="coerce")
 datos_filtrados["Longitud"] = pd.to_numeric(datos_filtrados["Longitud"], errors="coerce")
 datos_geo = datos_filtrados.dropna(subset=["Latitud", "Longitud"])
@@ -555,7 +556,7 @@ def muestrear_puntos(df, max_puntos=5000):
         return df.sample(n=max_puntos, random_state=1)
     return df
 
-# --- --- --- Función original de parcelas --- --- --- #
+# --- --- --- Función para crear figura de parcelas --- --- --- #
 def crear_figura(datos_filtrados, zoom=4):
     datos_geo_filtrado = datos_filtrados.dropna(subset=["Latitud", "Longitud"]).copy()
     datos_geo_filtrado["Latitud_r"] = datos_geo_filtrado["Latitud"].round(4)
@@ -615,10 +616,10 @@ def crear_figura(datos_filtrados, zoom=4):
     )
     return fig
 
-# --- --- --- Streamlit --- --- --- #
+# --- --- --- Streamlit: Slider de zoom --- --- --- #
 zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)
 
-# Crear figura de parcelas
+# --- --- --- Crear figura de parcelas --- --- --- #
 fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
 
 # --- --- --- Cargar y filtrar HUBs --- --- --- #
@@ -629,12 +630,27 @@ if "Nombre" not in hubs.columns:
 hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(hubs["Nombre"].unique()))
 hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
 
-# Colores HUBs
-unique_hubs = hubs["Nombre"].unique()
-palette = px.colors.qualitative.Set3 * ((len(unique_hubs) // 12) + 1)
-hub_color_dict = {hub: palette[i] for i, hub in enumerate(unique_hubs)}
+# --- --- --- Slider para transparencia de polígonos HUB --- --- --- #
+transparencia = st.slider("Transparencia de los polígonos HUB", 0.01, 0.5, 0.05, 0.01)
 
-# Diccionario de nombres personalizados para la leyenda
+# --- --- --- Paleta de colores RGB para HUBs --- --- --- #
+hub_color_dict = {
+    "HUB 0": "rgb(220,220,220)",
+    "HUB 1": "rgb(227,111,30)",
+    "HUB 2": "rgb(171,6,52)",
+    "HUB 3": "rgb(253,185,19)",
+    "HUB 4": "rgb(44,175,164)",
+    "HUB 5": "rgb(0,79,90)",
+    "HUB 6": "rgb(194,72,54)",
+    "HUB 7": "rgb(91,155,152)",
+    "HUB 8": "rgb(80,145,205)",
+    "HUB 9": "rgb(82,78,134)",
+    "HUB 10": "rgb(221,117,174)",
+    "HUB 11": "rgb(139,140,53)",
+    "HUB 12": "rgb(0,178,89)"
+}
+
+# --- --- --- Diccionario de nombres para leyenda --- --- --- #
 nombre_leyenda_dict = {
     "HUB 0": "0._HUB TBD",
     "HUB 1": "1._HUB BAJ",
@@ -649,32 +665,30 @@ nombre_leyenda_dict = {
     "HUB 10": "10._HUB YUC",
     "HUB 11": "11._HUB VAGP",
     "HUB 12": "12._HUB VAM",
-
 }
 
-# --- --- --- Agregar HUBs encima (con transparencia y leyenda limpia) --- --- --- #
+# --- --- --- Agregar polígonos HUBs al mapa --- --- --- #
 for _, row in hubs_to_plot.iterrows():
     geom = row.geometry
     geoms = [geom] if geom.geom_type == "Polygon" else geom.geoms
     for i, poly in enumerate(geoms):
         x, y = poly.exterior.xy
+        color_rgb = hub_color_dict[row["Nombre"]]
         fig_mapa_geo.add_trace(go.Scattermapbox(
             lat=list(y),
             lon=list(x),
             mode="lines",
             fill="toself",
-            fillcolor=hub_color_dict[row["Nombre"]].replace("rgb", "rgba").replace(")", ",0.1)"),  # transparencia 10%
-            line=dict(color=hub_color_dict[row["Nombre"]], width=2),
+            fillcolor=color_rgb.replace("rgb", "rgba").replace(")", f",{transparencia})"),
+            line=dict(color=color_rgb, width=2),
             name=nombre_leyenda_dict.get(row["Nombre"], f"HU {row['Nombre']}") if i==0 else None,
             showlegend=True if i==0 else False,
             hovertext=f"HUB: {row['Nombre']}",
             hoverinfo="text"
         ))
 
-# Mostrar mapa final
+# --- --- --- Mostrar mapa final --- --- --- #
 st.plotly_chart(fig_mapa_geo, use_container_width=True)
-
-
 
 # -----------------------------------
 # --- Crear DataFrame con número de parcelas por estado según el filtro activo ---

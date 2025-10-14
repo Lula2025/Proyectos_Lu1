@@ -533,7 +533,9 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
     st.dataframe(tabla_pivote, use_container_width=True)
 
 #----------------------------------
+st.markdown("---")  # Esta es la línea de separación
 
+title="🌎Mapas",
 
 # --- --- --- Librerías --- --- --- #
 import pandas as pd
@@ -617,7 +619,7 @@ def crear_figura(datos_filtrados, zoom=4):
     return fig
 
 # --- --- --- Streamlit: Slider de zoom --- --- --- #
-zoom = st.slider("Nivel de zoom del mapa", 4, 12, 4)
+zoom = st.slider("Nivel de zoom de los puntos del mapa", 4, 12, 4)
 
 # --- --- --- Crear figura de parcelas --- --- --- #
 fig_mapa_geo = crear_figura(datos_filtrados, zoom=zoom)
@@ -631,7 +633,7 @@ hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(hubs["Nombre"
 hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
 
 # --- --- --- Slider para transparencia de polígonos HUB --- --- --- #
-transparencia = st.slider("Transparencia de los polígonos HUB", 0.01, 0.5, 0.05, 0.01)
+transparencia = st.slider("Transparencia del color de los polígonos que delimitan a los HUBs", 0.01, 0.5, 0.05, 0.01)
 
 # --- --- --- Paleta de colores RGB para HUBs --- --- --- #
 hub_color_dict = {

@@ -535,7 +535,7 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 #----------------------------------
 st.markdown("---")  # Esta es la línea de separación
 
-title="🌎Mapas",
+title="🌎 Mapas"
 
 # --- --- --- Librerías --- --- --- #
 import pandas as pd

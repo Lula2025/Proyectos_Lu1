@@ -629,7 +629,7 @@ hubs = gpd.read_parquet("HUBs.parquet")
 if "Nombre" not in hubs.columns:
     hubs["Nombre"] = [f"HUB {i}" for i in range(len(hubs))]
 
-hub_seleccionado = st.selectbox("Selecciona HUB", ["Todos"] + list(hubs["Nombre"].unique()))
+hub_seleccionado = st.selectbox("Selecciona el limite del HUB", ["Todos"] + list(hubs["Nombre"].unique()))
 hubs_to_plot = hubs if hub_seleccionado == "Todos" else hubs[hubs["Nombre"] == hub_seleccionado]
 
 # --- --- --- Slider para transparencia de polígonos HUB --- --- --- #

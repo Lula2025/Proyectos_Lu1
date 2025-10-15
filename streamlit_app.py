@@ -477,6 +477,7 @@ st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(12
 
 # ----------
 
+st.write("")
 # --- Tabla de porcentajes por año y categoría del proyecto ---
 st.markdown("### 📋 Distribución(%) por Categoría del Proyecto, por Año")
 
@@ -506,7 +507,7 @@ tabla_pct = tabla_pct.reset_index()
 # Mostrar tabla sin scroll horizontal (adaptada al contenido)
 st.dataframe(tabla_pct, use_container_width=False, height=min(600, 40 * len(tabla_pct)))
 
-
+st.write("")
 # --- Tabla pivote: Número único de productores por género, proyecto y año ---
 if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.columns):
     st.markdown("### 📊 Número Único de Productores(as)")
@@ -519,6 +520,7 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
         "NA..": "n/a"
     })
 
+    st.write("")
     # Tabla base con conteo único de productores
     tabla_base = (
         datos_filtrados

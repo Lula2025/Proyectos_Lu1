@@ -216,7 +216,11 @@ col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
 
 st.markdown("---")  # Esta es la línea de separación
 
+st.write("")
+
 st.markdown("### 📉 Gráficas")
+
+st.write("")
 
 # Asegurar que la columna Año siempre sea numérica
 datos_filtrados["Anio"] = pd.to_numeric(datos_filtrados["Anio"], errors="coerce").astype("Int64")

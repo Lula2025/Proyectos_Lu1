@@ -216,6 +216,7 @@ col_r4.metric("👩‍🌾 Productores(as) Totales", f"{total_productores:,}")
 
 st.markdown("---")  # Esta es la línea de separación
 
+st.markdown("### 📉 Gráficas")
 
 # Asegurar que la columna Año siempre sea numérica
 datos_filtrados["Anio"] = pd.to_numeric(datos_filtrados["Anio"], errors="coerce").astype("Int64")
@@ -410,6 +411,7 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
 
 
 st.markdown("---")  # Línea de separación
+st.markdown("### 🧮 Tablas")
 
 # --- Recuento por Año, Categoría y Proyecto ---
 conteo_mix = (

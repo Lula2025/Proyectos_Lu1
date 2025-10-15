@@ -468,6 +468,8 @@ if "🔢 Bitacoras " in tabla_final.columns:
     tabla_final["🔢 Bitacoras "] = tabla_final["🔢 Bitacoras "].astype(int)
 
 # Mostrar tabla final en Streamlit
+st.write("")
+
 st.markdown("### 📋 Número Total de Bitácoras y Distribución(%) por Proyecto y Categoría, por Año")
 st.dataframe(tabla_final.reset_index(), use_container_width=False, height=min(120, 60* len(tabla_final)))
 

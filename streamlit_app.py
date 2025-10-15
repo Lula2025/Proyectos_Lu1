@@ -415,7 +415,10 @@ if "Genero" in datos_filtrados.columns and "Anio" in datos_filtrados.columns:
 
 
 st.markdown("---")  # Línea de separación
+
+st.write("")
 st.markdown("### 🧮 Tablas")
+st.write("")
 
 # --- Recuento por Año, Categoría y Proyecto ---
 conteo_mix = (
@@ -542,6 +545,8 @@ if {"Id_Productor", "Genero", "Proyecto", "Anio"}.issubset(datos_filtrados.colum
 st.markdown("---")  # Esta es la línea de separación
 
 st.markdown("### 🌎 Mapas")
+
+st.write("")
 
 # --- --- --- Librerías --- --- --- #
 import pandas as pd
